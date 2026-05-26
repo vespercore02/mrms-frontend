@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
-import { getUser, logout } from '../utils/auth';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const user = getUser();
-
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  useEffect(() => {
   const fetchSummary = async () => {
     try {
       const response = await axiosClient.get('/dashboard/summary');
@@ -22,31 +18,14 @@ const Dashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchSummary();
-  }, []);
+  fetchSummary();
+}, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
-  if (loading) return <div style={styles.page}>Loading dashboard...</div>;
+  if (loading) return <div>Loading dashboard...</div>;
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>MRMS Dashboard</h1>
-          <p style={styles.subtitle}>
-            Welcome, {user?.FullName} — {user?.Role?.RoleName}
-          </p>
-        </div>
-
-        <button onClick={handleLogout} style={styles.logout}>
-          Logout
-        </button>
-      </div>
+    <div>
+      <h1>Dashboard</h1>
 
       {error && <div style={styles.error}>{error}</div>}
 
@@ -86,32 +65,6 @@ const Card = ({ title, value }) => {
 };
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    padding: '24px',
-    background: '#f3f4f6',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-  },
-  title: {
-    margin: 0,
-  },
-  subtitle: {
-    margin: '4px 0 0',
-    color: '#6b7280',
-  },
-  logout: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#dc2626',
-    color: '#fff',
-    cursor: 'pointer',
-  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
