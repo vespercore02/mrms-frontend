@@ -10,6 +10,7 @@ import Users from '../pages/Users';
 import AuditLogs from '../pages/AuditLogs';
 import RequestDetails from '../pages/RequestDetails';
 import CreateRequest from '../pages/CreateRequest';
+import AgencyForms from '../pages/AgencyForms';
 
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
@@ -36,8 +37,10 @@ const AppRoutes = () => {
         <Route path="/users" element={withLayout(<Users />)} />
         <Route path="/audit-logs" element={withLayout(<AuditLogs />)} />
         <Route path="/requests/:id" element={withLayout(<RequestDetails />)} />
+
         <Route path="/requests/create" element={withLayout(<CreateRequest />)} />
-        
+        <Route path="/agency-forms" element={withLayout(<AgencyForms />)} />
+
       </Routes>
     </BrowserRouter>
   );

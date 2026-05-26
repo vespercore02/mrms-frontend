@@ -9,6 +9,7 @@ const Sidebar = () => {
     { path: '/specifics', label: 'Specifics' },
     { path: '/users', label: 'Users' },
     { path: '/audit-logs', label: 'Audit Logs' },
+    { path: '/agency-forms', label: 'Agency Forms' },
   ];
 
   return (
