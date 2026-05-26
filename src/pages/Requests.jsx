@@ -1,28 +1,28 @@
-import { useEffect, useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
+import { useNavigate } from "react-router-dom";
 
 const Requests = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [meta, setMeta] = useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
-  const [search, setSearch] = useState('');
-const [submittedSearch, setSubmittedSearch] = useState('');
-  const [status, setStatus] = useState('');
-
- 
+  const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     const fetchRequests = async () => {
       try {
         setLoading(true);
 
-        const response = await axiosClient.get('/requests', {
+        const response = await axiosClient.get("/requests", {
           params: {
             page,
             limit,
@@ -35,9 +35,9 @@ const [submittedSearch, setSubmittedSearch] = useState('');
 
         setRequests(result.data || []);
         setMeta(result);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load requests');
+        setError(err.response?.data?.message || "Failed to load requests");
       } finally {
         setLoading(false);
       }
@@ -50,12 +50,21 @@ const [submittedSearch, setSubmittedSearch] = useState('');
     e.preventDefault();
 
     setPage(1);
-  setSubmittedSearch(search);
+    setSubmittedSearch(search);
   };
 
   return (
     <div>
-      <h1 style={styles.title}>Requests</h1>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Requests</h1>
+
+        <button
+          onClick={() => navigate("/requests/create")}
+          style={styles.button}
+        >
+          + Create Request
+        </button>
+      </div>
 
       <form onSubmit={handleSearch} style={styles.filters}>
         <input
@@ -114,31 +123,29 @@ const [submittedSearch, setSubmittedSearch] = useState('');
                   </tr>
                 ) : (
                   requests.map((request) => (
-                    <tr key={request.RequestID}>
+                    <tr
+                      key={request.RequestID}
+                      onClick={() => navigate(`/requests/${request.RequestID}`)}
+                      style={{ cursor: "pointer" }}
+                    >
                       <td style={styles.td}>{request.RequestCode}</td>
 
+                      <td style={styles.td}>{request.RequestType}</td>
+
                       <td style={styles.td}>
-                        {request.RequestType}
+                        {request.AgencyForm?.AgencyName || "-"}
                       </td>
 
                       <td style={styles.td}>
-                        {request.AgencyForm?.AgencyName || '-'}
+                        {request.requester?.FullName || "-"}
                       </td>
 
                       <td style={styles.td}>
-                        {request.requester?.FullName || '-'}
+                        <span style={styles.badge}>{request.Status}</span>
                       </td>
 
                       <td style={styles.td}>
-                        <span style={styles.badge}>
-                          {request.Status}
-                        </span>
-                      </td>
-
-                      <td style={styles.td}>
-                        {new Date(
-                          request.createdAt
-                        ).toLocaleDateString()}
+                        {new Date(request.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
                   ))
@@ -157,8 +164,7 @@ const [submittedSearch, setSubmittedSearch] = useState('');
             </button>
 
             <span>
-              Page {meta?.currentPage || 1} of{' '}
-              {meta?.totalPages || 1}
+              Page {meta?.currentPage || 1} of {meta?.totalPages || 1}
             </span>
 
             <button
@@ -177,88 +183,95 @@ const [submittedSearch, setSubmittedSearch] = useState('');
 
 const styles = {
   title: {
-    marginBottom: '20px',
+    marginBottom: "20px",
   },
 
   filters: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    flexWrap: 'wrap',
+    display: "flex",
+    gap: "12px",
+    marginBottom: "16px",
+    flexWrap: "wrap",
   },
 
   input: {
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    minWidth: '180px',
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    minWidth: "180px",
   },
 
   button: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
 
   card: {
-    background: '#fff',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
-    overflowX: 'auto',
+    background: "#fff",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+    overflowX: "auto",
   },
 
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
 
   th: {
-    textAlign: 'left',
-    padding: '14px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
-    fontSize: '14px',
+    textAlign: "left",
+    padding: "14px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
+    fontSize: "14px",
   },
 
   td: {
-    padding: '14px',
-    borderBottom: '1px solid #e5e7eb',
-    fontSize: '14px',
+    padding: "14px",
+    borderBottom: "1px solid #e5e7eb",
+    fontSize: "14px",
   },
 
   badge: {
-    padding: '4px 10px',
-    borderRadius: '999px',
-    background: '#dbeafe',
-    color: '#1d4ed8',
-    fontSize: '12px',
-    fontWeight: 'bold',
+    padding: "4px 10px",
+    borderRadius: "999px",
+    background: "#dbeafe",
+    color: "#1d4ed8",
+    fontSize: "12px",
+    fontWeight: "bold",
   },
 
   pagination: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '16px',
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "16px",
   },
 
   pageButton: {
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "8px 12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
 
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
+  },
+
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "16px",
   },
 };
 
