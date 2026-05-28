@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
 
 const emptyForm = {
-  AgencyUniqueID: '',
-  AgencyName: '',
-  AgencyAddress: '',
-  AgencyContact: '',
-  AgencyDate: '',
+  AgencyUniqueID: "",
+  AgencyName: "",
+  AgencyAddress: "",
+  AgencyContact: "",
+  AgencyDate: "",
 };
 
 const AgencyForms = () => {
@@ -16,20 +16,23 @@ const AgencyForms = () => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingAgencyId, setUploadingAgencyId] = useState(null);
 
   useEffect(() => {
     const fetchAgencies = async () => {
       try {
         setLoading(true);
-        const response = await axiosClient.get('/agency-forms');
+        const response = await axiosClient.get("/agency-forms");
 
         setAgencies(response.data.data || []);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load agency forms');
+        setError(err.response?.data?.message || "Failed to load agency forms");
       } finally {
         setLoading(false);
       }
@@ -54,11 +57,11 @@ const AgencyForms = () => {
     setEditingId(agency.AgencyUniqueID);
 
     setForm({
-      AgencyUniqueID: agency.AgencyUniqueID || '',
-      AgencyName: agency.AgencyName || '',
-      AgencyAddress: agency.AgencyAddress || '',
-      AgencyContact: agency.AgencyContact || '',
-      AgencyDate: agency.AgencyDate || '',
+      AgencyUniqueID: agency.AgencyUniqueID || "",
+      AgencyName: agency.AgencyName || "",
+      AgencyAddress: agency.AgencyAddress || "",
+      AgencyContact: agency.AgencyContact || "",
+      AgencyDate: agency.AgencyDate || "",
     });
   };
 
@@ -67,21 +70,21 @@ const AgencyForms = () => {
 
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       if (editingId) {
         await axiosClient.put(`/agency-forms/${editingId}`, form);
-        setSuccess('Agency form updated successfully.');
+        setSuccess("Agency form updated successfully.");
       } else {
-        await axiosClient.post('/agency-forms', form);
-        setSuccess('Agency form created successfully.');
+        await axiosClient.post("/agency-forms", form);
+        setSuccess("Agency form created successfully.");
       }
 
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save agency form');
+      setError(err.response?.data?.message || "Failed to save agency form");
     } finally {
       setSaving(false);
     }
@@ -89,21 +92,52 @@ const AgencyForms = () => {
 
   const handleDelete = async (agencyId) => {
     const confirmed = window.confirm(
-      'Delete this agency form? This may affect related requests/files.'
+      "Delete this agency form? This may affect related requests/files.",
     );
 
     if (!confirmed) return;
 
     try {
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       await axiosClient.delete(`/agency-forms/${agencyId}`);
 
-      setSuccess('Agency form deleted successfully.');
+      setSuccess("Agency form deleted successfully.");
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete agency form');
+      setError(err.response?.data?.message || "Failed to delete agency form");
+    }
+  };
+
+  const handleFileUpload = async (agencyId) => {
+    if (!selectedFile) {
+      setError("Please choose a file first.");
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccess("");
+      setUploadingAgencyId(agencyId);
+
+      const formData = new FormData();
+      formData.append("AgencyUniqueID", agencyId);
+      formData.append("file", selectedFile);
+
+      await axiosClient.post("/file-paths/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      setSuccess("File uploaded successfully.");
+      setSelectedFile(null);
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to upload file");
+    } finally {
+      setUploadingAgencyId(null);
     }
   };
 
@@ -116,7 +150,7 @@ const AgencyForms = () => {
 
       <div style={styles.grid}>
         <div style={styles.card}>
-          <h2>{editingId ? 'Edit Agency Form' : 'Create Agency Form'}</h2>
+          <h2>{editingId ? "Edit Agency Form" : "Create Agency Form"}</h2>
 
           <form onSubmit={handleSubmit}>
             <label>Agency Unique ID</label>
@@ -169,7 +203,7 @@ const AgencyForms = () => {
 
             <div style={styles.actions}>
               <button type="submit" disabled={saving} style={styles.button}>
-                {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                {saving ? "Saving..." : editingId ? "Update" : "Create"}
               </button>
 
               {editingId && (
@@ -200,13 +234,14 @@ const AgencyForms = () => {
                     <th style={styles.th}>Contact</th>
                     <th style={styles.th}>Date</th>
                     <th style={styles.th}>Actions</th>
+                    <th style={styles.th}>Upload File</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {agencies.length === 0 ? (
                     <tr>
-                      <td style={styles.td} colSpan="5">
+                      <td style={styles.td} colSpan="6">
                         No agency forms found.
                       </td>
                     </tr>
@@ -218,11 +253,11 @@ const AgencyForms = () => {
                           <strong>{agency.AgencyName}</strong>
                           <br />
                           <span style={styles.muted}>
-                            {agency.AgencyAddress || '-'}
+                            {agency.AgencyAddress || "-"}
                           </span>
                         </td>
-                        <td style={styles.td}>{agency.AgencyContact || '-'}</td>
-                        <td style={styles.td}>{agency.AgencyDate || '-'}</td>
+                        <td style={styles.td}>{agency.AgencyContact || "-"}</td>
+                        <td style={styles.td}>{agency.AgencyDate || "-"}</td>
                         <td style={styles.td}>
                           <button
                             onClick={() => handleEdit(agency)}
@@ -232,12 +267,31 @@ const AgencyForms = () => {
                           </button>
 
                           <button
-                            onClick={() =>
-                              handleDelete(agency.AgencyUniqueID)
-                            }
+                            onClick={() => handleDelete(agency.AgencyUniqueID)}
                             style={styles.deleteButton}
                           >
                             Delete
+                          </button>
+                        </td>
+                        <td style={styles.td}>
+                          <input
+                            type="file"
+                            onChange={(e) => setSelectedFile(e.target.files[0])}
+                            style={styles.fileInput}
+                          />
+
+                          <button
+                            onClick={() =>
+                              handleFileUpload(agency.AgencyUniqueID)
+                            }
+                            style={styles.smallButton}
+                            disabled={
+                              uploadingAgencyId === agency.AgencyUniqueID
+                            }
+                          >
+                            {uploadingAgencyId === agency.AgencyUniqueID
+                              ? "Uploading..."
+                              : "Upload"}
                           </button>
                         </td>
                       </tr>
@@ -255,95 +309,100 @@ const AgencyForms = () => {
 
 const styles = {
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(300px, 420px) 1fr',
-    gap: '16px',
-    alignItems: 'start',
+    display: "grid",
+    gridTemplateColumns: "minmax(300px, 420px) 1fr",
+    gap: "16px",
+    alignItems: "start",
   },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
   },
   input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    margin: '6px 0 14px',
+    width: "100%",
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    margin: "6px 0 14px",
   },
   actions: {
-    display: 'flex',
-    gap: '8px',
+    display: "flex",
+    gap: "8px",
   },
   button: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
   cancelButton: {
-    padding: '10px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   smallButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
-    marginRight: '6px',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
+    marginRight: "6px",
   },
   deleteButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#dc2626',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#dc2626",
+    color: "#fff",
+    cursor: "pointer",
   },
   tableWrap: {
-    overflowX: 'auto',
+    overflowX: "auto",
   },
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
   th: {
-    textAlign: 'left',
-    padding: '12px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    textAlign: "left",
+    padding: "12px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
-    verticalAlign: 'top',
+    padding: "12px",
+    borderBottom: "1px solid #e5e7eb",
+    verticalAlign: "top",
   },
   muted: {
-    color: '#6b7280',
-    fontSize: '12px',
+    color: "#6b7280",
+    fontSize: "12px",
   },
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
   },
   success: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#dcfce7',
-    color: '#166534',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
+    marginBottom: "16px",
+  },
+  fileInput: {
+    display: "block",
+    marginBottom: "8px",
+    maxWidth: "180px",
   },
 };
 
