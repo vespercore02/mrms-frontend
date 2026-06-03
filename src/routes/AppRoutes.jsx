@@ -17,6 +17,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
 import Cabinets from "../pages/Cabinets";
 import CabinetDetails from "../pages/CabinetDetails";
+import CabinetBayDetails from "../pages/CabinetBayDetails";
+import StorageBoxDetails from "../pages/StorageBoxDetails";
 
 const withLayout = (page) => (
   <ProtectedRoute>
@@ -46,6 +48,8 @@ const AppRoutes = () => {
 
         <Route path="/cabinets" element={withLayout(<Cabinets />)} />
         <Route path="/cabinets/:id" element={withLayout(<CabinetDetails />)} />
+        <Route path="/cabinet-bays/:id" element={withLayout(<CabinetBayDetails />)} />
+        <Route path="/storage-boxes/:id" element={withLayout(<StorageBoxDetails />)} />
 
       </Routes>
     </BrowserRouter>
