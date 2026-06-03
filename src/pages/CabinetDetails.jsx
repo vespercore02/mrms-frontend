@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { getCabinetBayStatusStyle } from "../utils/storageStatusColors";
 
 const CabinetDetails = () => {
   const { id } = useParams();
@@ -48,19 +49,11 @@ const CabinetDetails = () => {
     return filteredBays.find(
       (bay) =>
         Number(bay.LevelNumber) === Number(levelNumber) &&
-        Number(bay.BayNumber) === Number(bayNumber)
+        Number(bay.BayNumber) === Number(bayNumber),
     );
   };
 
-  const getBayStyle = (status) => {
-    if (status === "AVAILABLE") return styles.availableBay;
-    if (status === "NEAR_FULL") return styles.nearFullBay;
-    if (status === "FULL") return styles.fullBay;
-    if (status === "OVERWEIGHT") return styles.overweightBay;
-    if (status === "MAINTENANCE") return styles.maintenanceBay;
-
-    return styles.availableBay;
-  };
+  
 
   if (loading) return <p>Loading cabinet details...</p>;
 
@@ -129,11 +122,23 @@ const CabinetDetails = () => {
         </div>
 
         <div style={styles.legend}>
-          <Legend label="Available" style={styles.availableBay} />
-          <Legend label="Near Full" style={styles.nearFullBay} />
-          <Legend label="Full" style={styles.fullBay} />
-          <Legend label="Overweight" style={styles.overweightBay} />
-          <Legend label="Maintenance" style={styles.maintenanceBay} />
+          <Legend
+            label="Available"
+            style={getCabinetBayStatusStyle("AVAILABLE")}
+          />
+          <Legend
+            label="Near Full"
+            style={getCabinetBayStatusStyle("NEAR_FULL")}
+          />
+          <Legend label="Full" style={getCabinetBayStatusStyle("FULL")} />
+          <Legend
+            label="Overweight"
+            style={getCabinetBayStatusStyle("OVERWEIGHT")}
+          />
+          <Legend
+            label="Maintenance"
+            style={getCabinetBayStatusStyle("MAINTENANCE")}
+          />
         </div>
 
         <div style={styles.mapWrap}>
@@ -163,11 +168,13 @@ const CabinetDetails = () => {
                       }
                       style={{
                         ...styles.bayBox,
-                        ...getBayStyle(bay.Status),
+                        ...getCabinetBayStatusStyle(bay.Status),
                       }}
                     >
                       <strong>B{bay.BayNumber}</strong>
-                      <span>{bay.CurrentBoxes}/{bay.MaxBoxes} boxes</span>
+                      <span>
+                        {bay.CurrentBoxes}/{bay.MaxBoxes} boxes
+                      </span>
                       <small>
                         {Number(bay.CurrentWeightKg).toFixed(1)} /{" "}
                         {Number(bay.MaxWeightKg).toFixed(0)} kg

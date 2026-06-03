@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { getStorageBoxStatusStyle } from "../utils/storageStatusColors";
 
 const emptyBoxForm = {
   DepartmentID: "",
@@ -159,7 +160,8 @@ const CabinetBayDetails = () => {
   const remainingWeight =
     Number(bay.MaxWeightKg || 0) - Number(bay.CurrentWeightKg || 0);
 
-  const remainingBoxes = Number(bay.MaxBoxes || 0) - Number(bay.CurrentBoxes || 0);
+  const remainingBoxes =
+    Number(bay.MaxBoxes || 0) - Number(bay.CurrentBoxes || 0);
 
   const isAddDisabled =
     bay.Status === "MAINTENANCE" ||
@@ -194,8 +196,7 @@ const CabinetBayDetails = () => {
           <h2>Bay Capacity</h2>
 
           <p>
-            <strong>Weight:</strong>{" "}
-            {Number(bay.CurrentWeightKg).toFixed(2)} /{" "}
+            <strong>Weight:</strong> {Number(bay.CurrentWeightKg).toFixed(2)} /{" "}
             {Number(bay.MaxWeightKg).toFixed(2)} kg
           </p>
 
@@ -268,11 +269,7 @@ const CabinetBayDetails = () => {
                 placeholder="Box description / notes..."
               />
 
-              <button
-                type="submit"
-                disabled={savingBox}
-                style={styles.button}
-              >
+              <button type="submit" disabled={savingBox} style={styles.button}>
                 {savingBox ? "Adding..." : "Add Box"}
               </button>
             </form>
@@ -311,7 +308,16 @@ const CabinetBayDetails = () => {
                     <td style={styles.td}>
                       {Number(box.EstimatedWeightKg).toFixed(2)} kg
                     </td>
-                    <td style={styles.td}>{box.Status}</td>
+                    <td style={styles.td}>
+                      <span
+                        style={{
+                          ...styles.badge,
+                          ...getStorageBoxStatusStyle(box.Status),
+                        }}
+                      >
+                        {box.Status}
+                      </span>
+                    </td>
                     <td style={styles.td}>{box.Remarks || "-"}</td>
                     <td style={styles.td}>
                       <button
@@ -486,6 +492,13 @@ const styles = {
     background: "#dcfce7",
     color: "#166534",
     marginBottom: "16px",
+  },
+  badge: {
+    padding: "4px 10px",
+    borderRadius: "999px",
+    fontSize: "12px",
+    fontWeight: "bold",
+    display: "inline-block",
   },
 };
 

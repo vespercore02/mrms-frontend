@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { getCabinetStatusStyle } from "../utils/storageStatusColors";
 
 const FloorMap = () => {
   const navigate = useNavigate();
@@ -30,12 +31,12 @@ const FloorMap = () => {
 
   const zoneA = useMemo(
     () => cabinets.filter((cabinet) => cabinet.Zone === "A"),
-    [cabinets]
+    [cabinets],
   );
 
   const zoneB = useMemo(
     () => cabinets.filter((cabinet) => cabinet.Zone === "B"),
-    [cabinets]
+    [cabinets],
   );
 
   const groupByRow = (items) => {
@@ -70,7 +71,7 @@ const FloorMap = () => {
         <div style={styles.zoneRows}>
           {rows.map((row) => {
             const rowCabinets = groupedRows[row].sort(
-              (a, b) => a.FloorColumn - b.FloorColumn
+              (a, b) => a.FloorColumn - b.FloorColumn,
             );
 
             return (
@@ -90,11 +91,7 @@ const FloorMap = () => {
                       onClick={() => navigate(`/cabinets/${cabinet.CabinetID}`)}
                       style={{
                         ...styles.cabinetBlock,
-                        ...(cabinet.Status === "ACTIVE"
-                          ? styles.activeCabinet
-                          : cabinet.Status === "MAINTENANCE"
-                            ? styles.maintenanceCabinet
-                            : styles.inactiveCabinet),
+                        ...getCabinetStatusStyle(cabinet.Status),
                       }}
                     >
                       <strong>{cabinet.CabinetCode}</strong>
@@ -103,6 +100,7 @@ const FloorMap = () => {
                     </button>
                   ))}
                 </div>
+                
               </div>
             );
           })}

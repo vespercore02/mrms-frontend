@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { getStorageBoxStatusStyle } from "../utils/storageStatusColors";
 
 const StorageBoxDetails = () => {
   const { id } = useParams();
@@ -70,7 +71,7 @@ const StorageBoxDetails = () => {
   const availableDataLists = useMemo(() => {
     return dataLists.filter((item) => {
       const notAssigned = !assignedDataListIds.includes(
-        Number(item.DataListID)
+        Number(item.DataListID),
       );
 
       const keyword = search.toLowerCase();
@@ -183,16 +184,23 @@ const StorageBoxDetails = () => {
           <h2>Box Information</h2>
 
           <Info label="Box Code" value={box.BoxCode} />
-          <Info label="Status" value={box.Status} />
+          <p style={styles.info}>
+            <strong>Status:</strong>{" "}
+            <span
+              style={{
+                ...styles.badge,
+                ...getStorageBoxStatusStyle(box.Status),
+              }}
+            >
+              {box.Status}
+            </span>
+          </p>
           <Info
             label="Department"
             value={box.Department?.DepartmentName || "-"}
           />
           <Info label="Remarks" value={box.Remarks || "-"} />
-          <Info
-            label="Exact Location"
-            value={`${box.BoxCode}`}
-          />
+          <Info label="Exact Location" value={`${box.BoxCode}`} />
         </div>
 
         <div style={styles.card}>

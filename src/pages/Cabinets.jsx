@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import { getCabinetStatusStyle } from "../utils/storageStatusColors";
 
 const Cabinets = () => {
   const navigate = useNavigate();
@@ -126,11 +127,7 @@ const Cabinets = () => {
                         <span
                           style={{
                             ...styles.badge,
-                            ...(cabinet.Status === "ACTIVE"
-                              ? styles.activeBadge
-                              : cabinet.Status === "MAINTENANCE"
-                                ? styles.maintenanceBadge
-                                : styles.inactiveBadge),
+                            ...getCabinetStatusStyle(cabinet.Status),
                           }}
                         >
                           {cabinet.Status}
