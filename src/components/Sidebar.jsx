@@ -12,6 +12,7 @@ const Sidebar = () => {
     { path: '/agency-forms', label: 'Agency Forms' },
     { path: "/cabinets", label: "Cabinets" },
     { path: "/record-locations", label: "Record Locations" },
+    { path: "/floor-map", label: "Floor Map" },
   ];
 
   return (
