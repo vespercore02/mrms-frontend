@@ -16,6 +16,7 @@ import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 import Cabinets from "../pages/Cabinets";
+import CabinetDetails from "../pages/CabinetDetails";
 
 const withLayout = (page) => (
   <ProtectedRoute>
@@ -44,6 +45,7 @@ const AppRoutes = () => {
         <Route path="/agency-forms" element={withLayout(<AgencyForms />)} />
 
         <Route path="/cabinets" element={withLayout(<Cabinets />)} />
+        <Route path="/cabinets/:id" element={withLayout(<CabinetDetails />)} />
 
       </Routes>
     </BrowserRouter>
