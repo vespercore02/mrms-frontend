@@ -10,6 +10,7 @@ const Sidebar = () => {
     { path: '/users', label: 'Users' },
     { path: '/audit-logs', label: 'Audit Logs' },
     { path: '/agency-forms', label: 'Agency Forms' },
+    { path: "/cabinets", label: "Cabinets" },
   ];
 
   return (

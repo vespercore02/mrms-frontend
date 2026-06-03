@@ -15,6 +15,8 @@ import AgencyForms from '../pages/AgencyForms';
 import Layout from '../components/Layout';
 import ProtectedRoute from '../components/ProtectedRoute';
 
+import Cabinets from "../pages/Cabinets";
+
 const withLayout = (page) => (
   <ProtectedRoute>
     <Layout>{page}</Layout>
@@ -40,6 +42,8 @@ const AppRoutes = () => {
 
         <Route path="/requests/create" element={withLayout(<CreateRequest />)} />
         <Route path="/agency-forms" element={withLayout(<AgencyForms />)} />
+
+        <Route path="/cabinets" element={withLayout(<Cabinets />)} />
 
       </Routes>
     </BrowserRouter>
