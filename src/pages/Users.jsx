@@ -8,6 +8,7 @@ const emptyForm = {
   Email: "",
   Password: "",
   RoleID: "",
+  DepartmentID: "",
   Status: "active",
 };
 
@@ -27,6 +28,9 @@ const Users = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -67,6 +71,28 @@ const Users = () => {
     fetchUsers();
   }, [refreshKey]);
 
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axiosClient.get("/departments", {
+          params: {
+            page: 1,
+            limit: 100,
+          },
+        });
+
+        const result = response.data.data;
+        setDepartments(result.data || result || []);
+      } catch {
+        setDepartments([]);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
@@ -87,6 +113,7 @@ const Users = () => {
       Email: user.Email || "",
       Password: "",
       RoleID: user.RoleID || "",
+      DepartmentID: user.DepartmentID || "",
       Status: user.Status || "active",
     });
   };
@@ -100,11 +127,14 @@ const Users = () => {
       setSuccess("");
 
       const payload = {
-        FullName: form.FullName,
-        Email: form.Email,
+        FullName: form.FullName.trim(),
+        Email: form.Email.trim(),
         RoleID: Number(form.RoleID),
+        DepartmentID: form.DepartmentID ? Number(form.DepartmentID) : null,
         Status: form.Status,
       };
+
+      
 
       if (form.Password) {
         payload.Password = form.Password;
@@ -124,7 +154,11 @@ const Users = () => {
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save user");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to save user",
+      );
     } finally {
       setSaving(false);
     }
@@ -219,6 +253,30 @@ const Users = () => {
               ))}
             </select>
 
+            <label>Department</label>
+            <select
+              name="DepartmentID"
+              value={form.DepartmentID}
+              onChange={handleChange}
+              style={styles.input}
+              disabled={loadingDepartments}
+            >
+              <option value="">
+                {loadingDepartments
+                  ? "Loading departments..."
+                  : "No department / CRO user"}
+              </option>
+
+              {departments.map((department) => (
+                <option
+                  key={department.DepartmentID}
+                  value={department.DepartmentID}
+                >
+                  {department.DepartmentName}
+                </option>
+              ))}
+            </select>
+
             <label>Status</label>
             <select
               name="Status"
@@ -262,6 +320,7 @@ const Users = () => {
                     <th style={styles.th}>Name</th>
                     <th style={styles.th}>Email</th>
                     <th style={styles.th}>Role</th>
+                    <th style={styles.th}>Department</th>
                     <th style={styles.th}>Status</th>
                     <th style={styles.th}>Actions</th>
                   </tr>
@@ -270,7 +329,7 @@ const Users = () => {
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td style={styles.td} colSpan="5">
+                      <td style={styles.td} colSpan="6">
                         No users found.
                       </td>
                     </tr>
@@ -280,6 +339,9 @@ const Users = () => {
                         <td style={styles.td}>{user.FullName}</td>
                         <td style={styles.td}>{user.Email}</td>
                         <td style={styles.td}>{user.Role?.RoleName || "-"}</td>
+                        <td style={styles.td}>
+                          {user.Department?.DepartmentName || "-"}
+                        </td>
                         <td style={styles.td}>
                           <span style={styles.badge}>{user.Status}</span>
                         </td>
