@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getStorageBoxStatusStyle } from "../utils/storageStatusColors";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const emptyBoxForm = {
   DepartmentID: "",
@@ -12,6 +14,8 @@ const emptyBoxForm = {
 const CabinetBayDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [bay, setBay] = useState(null);
   const [boxes, setBoxes] = useState([]);
@@ -42,7 +46,12 @@ const CabinetBayDetails = () => {
         setBoxes(boxesResponse.data.data || []);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load bay details");
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -145,6 +154,7 @@ const CabinetBayDetails = () => {
   };
 
   if (loading) return <p>Loading bay details...</p>;
+  if (accessDenied) return <AccessDenied />;
 
   if (!bay) {
     return (

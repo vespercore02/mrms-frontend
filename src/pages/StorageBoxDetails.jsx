@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getStorageBoxStatusStyle } from "../utils/storageStatusColors";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const StorageBoxDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [box, setBox] = useState(null);
   const [boxRecords, setBoxRecords] = useState([]);
@@ -40,7 +44,12 @@ const StorageBoxDetails = () => {
         setBoxRecords(recordsResponse.data.data || []);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load box details");
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -141,6 +150,7 @@ const StorageBoxDetails = () => {
   };
 
   if (loading) return <p>Loading storage box details...</p>;
+  if (accessDenied) return <AccessDenied />;
 
   if (!box) {
     return (

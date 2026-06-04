@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getCabinetStatusStyle } from "../utils/storageStatusColors";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError } from "../utils/errorHelpers";
 
 const Cabinets = () => {
   const navigate = useNavigate();
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [cabinets, setCabinets] = useState([]);
   const [zoneFilter, setZoneFilter] = useState("");
@@ -27,6 +30,10 @@ const Cabinets = () => {
         setCabinets(response.data.data || []);
         setError("");
       } catch (err) {
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
         setError(err.response?.data?.message || "Failed to load cabinets");
       } finally {
         setLoading(false);
@@ -44,6 +51,8 @@ const Cabinets = () => {
     maintenance: cabinets.filter((item) => item.Status === "MAINTENANCE")
       .length,
   };
+
+  if (accessDenied) return <AccessDenied />;
 
   return (
     <div>

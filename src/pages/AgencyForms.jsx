@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../api/axiosClient";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const emptyForm = {
   AgencyUniqueID: "",
@@ -13,6 +15,8 @@ const AgencyForms = () => {
   const [agencies, setAgencies] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,7 +36,11 @@ const AgencyForms = () => {
         setAgencies(response.data.data || []);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load agency forms");
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -140,6 +148,8 @@ const AgencyForms = () => {
       setUploadingAgencyId(null);
     }
   };
+
+  if (accessDenied) return <AccessDenied />;
 
   return (
     <div>

@@ -1,33 +1,28 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
+import { getUser } from "../utils/auth";
+import { sidebarLinks } from "../config/sidebarLinks";
 
 const Sidebar = () => {
-  const links = [
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/requests', label: 'Requests' },
-    { path: '/departments', label: 'Departments' },
-    { path: '/series', label: 'Series' },
-    { path: '/specifics', label: 'Specifics' },
-    { path: '/users', label: 'Users' },
-    { path: '/audit-logs', label: 'Audit Logs' },
-    { path: '/agency-forms', label: 'Agency Forms' },
-    { path: "/cabinets", label: "Cabinets" },
-    { path: "/record-locations", label: "Record Locations" },
-    { path: "/floor-map", label: "Floor Map" },
-  ];
+  const user = getUser();
+  const roleName = user?.Role?.RoleName;
+
+  const visibleLinks = sidebarLinks.filter((link) =>
+    link.roles.includes(roleName)
+  );
 
   return (
-    <aside style={styles.sidebar}>
+    <aside style={styles.sidebar} className="no-print">
       <h2 style={styles.logo}>MRMS</h2>
 
       <nav style={styles.nav}>
-        {links.map((link) => (
+        {visibleLinks.map((link) => (
           <NavLink
             key={link.path}
             to={link.path}
             style={({ isActive }) => ({
               ...styles.link,
-              background: isActive ? '#2563eb' : 'transparent',
-              color: isActive ? '#fff' : '#d1d5db',
+              background: isActive ? "#2563eb" : "transparent",
+              color: isActive ? "#fff" : "#d1d5db",
             })}
           >
             {link.label}

@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const RecordLocations = () => {
   const navigate = useNavigate();
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [boxRecords, setBoxRecords] = useState([]);
   const [search, setSearch] = useState("");
@@ -21,9 +25,12 @@ const RecordLocations = () => {
         setBoxRecords(response.data.data || []);
         setError("");
       } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load record locations"
-        );
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -52,13 +59,13 @@ const RecordLocations = () => {
         bay?.BayCode?.toLowerCase().includes(keyword) ||
         cabinet?.CabinetCode?.toLowerCase().includes(keyword);
 
-      const matchesZone = zoneFilter
-        ? cabinet?.Zone === zoneFilter
-        : true;
+      const matchesZone = zoneFilter ? cabinet?.Zone === zoneFilter : true;
 
       return matchesSearch && matchesZone;
     });
   }, [boxRecords, search, zoneFilter]);
+
+  if (accessDenied) return <AccessDenied />;
 
   return (
     <div>
@@ -128,9 +135,7 @@ const RecordLocations = () => {
                         {dataList?.DataListItemNo || "-"}
                       </td>
                       <td style={styles.td}>
-                        <strong>
-                          {dataList?.DataListSpecificName || "-"}
-                        </strong>
+                        <strong>{dataList?.DataListSpecificName || "-"}</strong>
                       </td>
                       <td style={styles.td}>
                         {dataList?.DataListPeriodCover || "-"}
@@ -138,9 +143,7 @@ const RecordLocations = () => {
                       <td style={styles.td}>
                         <strong>{box?.BoxCode || "-"}</strong>
                       </td>
-                      <td style={styles.td}>
-                        {cabinet?.CabinetCode || "-"}
-                      </td>
+                      <td style={styles.td}>{cabinet?.CabinetCode || "-"}</td>
                       <td style={styles.td}>{bay?.Side || "-"}</td>
                       <td style={styles.td}>{bay?.LevelNumber || "-"}</td>
                       <td style={styles.td}>{bay?.BayNumber || "-"}</td>

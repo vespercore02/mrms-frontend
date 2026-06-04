@@ -2,9 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getCabinetStatusStyle } from "../utils/storageStatusColors";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const FloorMap = () => {
   const navigate = useNavigate();
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [cabinets, setCabinets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +24,12 @@ const FloorMap = () => {
         setCabinets(response.data.data || []);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load floor map");
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -52,7 +61,7 @@ const FloorMap = () => {
       return groups;
     }, {});
   };
-
+  if (accessDenied) return <AccessDenied />;
   const renderZone = (title, items, columns) => {
     const groupedRows = groupByRow(items);
     const rows = Object.keys(groupedRows).sort((a, b) => Number(a) - Number(b));
@@ -100,7 +109,6 @@ const FloorMap = () => {
                     </button>
                   ))}
                 </div>
-                
               </div>
             );
           })}

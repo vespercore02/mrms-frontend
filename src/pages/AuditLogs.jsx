@@ -1,24 +1,33 @@
-import { useEffect, useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const AuditLogs = () => {
+  const [accessDenied, setAccessDenied] = useState(false);
+
   const [logs, setLogs] = useState([]);
   const [selectedLog, setSelectedLog] = useState(null);
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchLogs = async () => {
       try {
         setLoading(true);
 
-        const response = await axiosClient.get('/audit-logs');
+        const response = await axiosClient.get("/audit-logs");
 
         setLogs(response.data.data || []);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load audit logs');
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -28,7 +37,7 @@ const AuditLogs = () => {
   }, []);
 
   const formatJson = (value) => {
-    if (!value) return '-';
+    if (!value) return "-";
 
     try {
       return JSON.stringify(value, null, 2);
@@ -37,6 +46,8 @@ const AuditLogs = () => {
     }
   };
 
+  if (accessDenied) return <AccessDenied />;
+  
   return (
     <div>
       <h1>Audit Logs</h1>
@@ -80,9 +91,9 @@ const AuditLogs = () => {
                           <span style={styles.badge}>{log.Action}</span>
                         </td>
                         <td style={styles.td}>{log.TableName}</td>
-                        <td style={styles.td}>{log.RecordID || '-'}</td>
+                        <td style={styles.td}>{log.RecordID || "-"}</td>
                         <td style={styles.td}>
-                          {log.User?.FullName || log.PerformedBy || '-'}
+                          {log.User?.FullName || log.PerformedBy || "-"}
                         </td>
                         <td style={styles.td}>
                           {new Date(log.createdAt).toLocaleString()}
@@ -105,10 +116,12 @@ const AuditLogs = () => {
             <>
               <Info label="Action" value={selectedLog.Action} />
               <Info label="Table" value={selectedLog.TableName} />
-              <Info label="Record ID" value={selectedLog.RecordID || '-'} />
+              <Info label="Record ID" value={selectedLog.RecordID || "-"} />
               <Info
                 label="Performed By"
-                value={selectedLog.User?.FullName || selectedLog.PerformedBy || '-'}
+                value={
+                  selectedLog.User?.FullName || selectedLog.PerformedBy || "-"
+                }
               />
               <Info
                 label="Date"
@@ -136,64 +149,64 @@ const Info = ({ label, value }) => (
 
 const styles = {
   grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr minmax(300px, 420px)',
-    gap: '16px',
-    alignItems: 'start',
+    display: "grid",
+    gridTemplateColumns: "1fr minmax(300px, 420px)",
+    gap: "16px",
+    alignItems: "start",
   },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
   },
   tableWrap: {
-    overflowX: 'auto',
+    overflowX: "auto",
   },
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
   th: {
-    textAlign: 'left',
-    padding: '12px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    textAlign: "left",
+    padding: "12px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
-    verticalAlign: 'top',
+    padding: "12px",
+    borderBottom: "1px solid #e5e7eb",
+    verticalAlign: "top",
   },
   row: {
-    cursor: 'pointer',
+    cursor: "pointer",
   },
   badge: {
-    padding: '4px 10px',
-    borderRadius: '999px',
-    background: '#ede9fe',
-    color: '#5b21b6',
-    fontSize: '12px',
-    fontWeight: 'bold',
+    padding: "4px 10px",
+    borderRadius: "999px",
+    background: "#ede9fe",
+    color: "#5b21b6",
+    fontSize: "12px",
+    fontWeight: "bold",
   },
   info: {
-    margin: '8px 0',
+    margin: "8px 0",
   },
   pre: {
-    background: '#111827',
-    color: '#f9fafb',
-    padding: '12px',
-    borderRadius: '8px',
-    overflowX: 'auto',
-    fontSize: '12px',
-    whiteSpace: 'pre-wrap',
+    background: "#111827",
+    color: "#f9fafb",
+    padding: "12px",
+    borderRadius: "8px",
+    overflowX: "auto",
+    fontSize: "12px",
+    whiteSpace: "pre-wrap",
   },
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
   },
 };
 

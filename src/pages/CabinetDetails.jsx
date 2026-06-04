@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getCabinetBayStatusStyle } from "../utils/storageStatusColors";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const CabinetDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const [cabinet, setCabinet] = useState(null);
   const [selectedSide, setSelectedSide] = useState("LEFT");
@@ -22,7 +26,12 @@ const CabinetDetails = () => {
         setCabinet(response.data.data);
         setError("");
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load cabinet");
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -53,9 +62,8 @@ const CabinetDetails = () => {
     );
   };
 
-  
-
   if (loading) return <p>Loading cabinet details...</p>;
+  if (accessDenied) return <AccessDenied />;
 
   if (!cabinet) {
     return (

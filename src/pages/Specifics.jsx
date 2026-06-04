@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const emptyForm = {
-  SpecificName: '',
-  RetentionPeriod: '',
-  SeriesID: '',
+  SpecificName: "",
+  RetentionPeriod: "",
+  SeriesID: "",
 };
 
 const Specifics = () => {
+  const [accessDenied, setAccessDenied] = useState(false);
+
   const [specifics, setSpecifics] = useState([]);
   const [seriesList, setSeriesList] = useState([]);
 
@@ -16,23 +20,23 @@ const Specifics = () => {
 
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [search, setSearch] = useState('');
-  const [submittedSearch, setSubmittedSearch] = useState('');
-  const [seriesFilter, setSeriesFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [seriesFilter, setSeriesFilter] = useState("");
   const [meta, setMeta] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [loadingSeries, setLoadingSeries] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchSeries = async () => {
       try {
-        const response = await axiosClient.get('/series', {
+        const response = await axiosClient.get("/series", {
           params: {
             page: 1,
             limit: 100,
@@ -41,7 +45,12 @@ const Specifics = () => {
 
         setSeriesList(response.data.data.data || []);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load series');
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoadingSeries(false);
       }
@@ -55,7 +64,7 @@ const Specifics = () => {
       try {
         setLoading(true);
 
-        const response = await axiosClient.get('/specifics', {
+        const response = await axiosClient.get("/specifics", {
           params: {
             page,
             limit,
@@ -68,9 +77,14 @@ const Specifics = () => {
 
         setSpecifics(result.data || []);
         setMeta(result);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load specifics');
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -106,9 +120,9 @@ const Specifics = () => {
     setEditingId(specific.SpecificID);
 
     setForm({
-      SpecificName: specific.SpecificName || '',
-      RetentionPeriod: specific.RetentionPeriod || '',
-      SeriesID: specific.SeriesID || '',
+      SpecificName: specific.SpecificName || "",
+      RetentionPeriod: specific.RetentionPeriod || "",
+      SeriesID: specific.SeriesID || "",
     });
   };
 
@@ -117,8 +131,8 @@ const Specifics = () => {
 
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       const payload = {
         SpecificName: form.SpecificName,
@@ -128,42 +142,42 @@ const Specifics = () => {
 
       if (editingId) {
         await axiosClient.put(`/specifics/${editingId}`, payload);
-        setSuccess('Specific record updated successfully.');
+        setSuccess("Specific record updated successfully.");
       } else {
-        await axiosClient.post('/specifics', payload);
-        setSuccess('Specific record created successfully.');
+        await axiosClient.post("/specifics", payload);
+        setSuccess("Specific record created successfully.");
       }
 
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Failed to save specific record'
-      );
+      setError(err.response?.data?.message || "Failed to save specific record");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (specificId) => {
-    const confirmed = window.confirm('Delete this specific record?');
+    const confirmed = window.confirm("Delete this specific record?");
 
     if (!confirmed) return;
 
     try {
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       await axiosClient.delete(`/specifics/${specificId}`);
 
-      setSuccess('Specific record deleted successfully.');
+      setSuccess("Specific record deleted successfully.");
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
       setError(
-        err.response?.data?.message || 'Failed to delete specific record'
+        err.response?.data?.message || "Failed to delete specific record",
       );
     }
   };
+
+  if (accessDenied) return <AccessDenied />;
 
   return (
     <div>
@@ -175,7 +189,7 @@ const Specifics = () => {
       <div style={styles.grid}>
         <div style={styles.card}>
           <h2>
-            {editingId ? 'Edit Specific Record' : 'Create Specific Record'}
+            {editingId ? "Edit Specific Record" : "Create Specific Record"}
           </h2>
 
           <form onSubmit={handleSubmit}>
@@ -209,7 +223,7 @@ const Specifics = () => {
               required
             >
               <option value="">
-                {loadingSeries ? 'Loading series...' : 'Select series'}
+                {loadingSeries ? "Loading series..." : "Select series"}
               </option>
 
               {seriesList.map((series) => (
@@ -221,7 +235,7 @@ const Specifics = () => {
 
             <div style={styles.actions}>
               <button type="submit" disabled={saving} style={styles.button}>
-                {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                {saving ? "Saving..." : editingId ? "Update" : "Create"}
               </button>
 
               {editingId && (
@@ -298,7 +312,7 @@ const Specifics = () => {
                           <td style={styles.td}>
                             {specific.Series
                               ? `${specific.Series.ItemNoID} - ${specific.Series.SeriesName}`
-                              : '-'}
+                              : "-"}
                           </td>
                           <td style={styles.td}>
                             <button
@@ -309,9 +323,7 @@ const Specifics = () => {
                             </button>
 
                             <button
-                              onClick={() =>
-                                handleDelete(specific.SpecificID)
-                              }
+                              onClick={() => handleDelete(specific.SpecificID)}
                               style={styles.deleteButton}
                             >
                               Delete
@@ -355,121 +367,121 @@ const Specifics = () => {
 
 const styles = {
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(300px, 420px) 1fr',
-    gap: '16px',
-    alignItems: 'start',
+    display: "grid",
+    gridTemplateColumns: "minmax(300px, 420px) 1fr",
+    gap: "16px",
+    alignItems: "start",
   },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
   },
   header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   searchForm: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
   },
   input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    margin: '6px 0 14px',
+    width: "100%",
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    margin: "6px 0 14px",
   },
   searchInput: {
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
   },
   actions: {
-    display: 'flex',
-    gap: '8px',
+    display: "flex",
+    gap: "8px",
   },
   button: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
   cancelButton: {
-    padding: '10px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   smallButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
-    marginRight: '6px',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
+    marginRight: "6px",
   },
   deleteButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#dc2626',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#dc2626",
+    color: "#fff",
+    cursor: "pointer",
   },
   tableWrap: {
-    overflowX: 'auto',
-    marginTop: '16px',
+    overflowX: "auto",
+    marginTop: "16px",
   },
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
   th: {
-    textAlign: 'left',
-    padding: '12px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    textAlign: "left",
+    padding: "12px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
+    padding: "12px",
+    borderBottom: "1px solid #e5e7eb",
   },
   pagination: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '16px',
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "16px",
   },
   pageButton: {
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "8px 12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
   },
   success: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#dcfce7',
-    color: '#166534',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
+    marginBottom: "16px",
   },
 };
 

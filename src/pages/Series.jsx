@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
-import axiosClient from '../api/axiosClient';
+import { useEffect, useState } from "react";
+import axiosClient from "../api/axiosClient";
+import AccessDenied from "../components/AccessDenied";
+import { isForbiddenError, getApiErrorMessage } from "../utils/errorHelpers";
 
 const emptyForm = {
-  ItemNoID: '',
-  SeriesName: '',
-  DepartmentID: '',
+  ItemNoID: "",
+  SeriesName: "",
+  DepartmentID: "",
 };
 
 const Series = () => {
+  const [accessDenied, setAccessDenied] = useState(false);
+
   const [seriesList, setSeriesList] = useState([]);
   const [departments, setDepartments] = useState([]);
 
@@ -16,23 +20,23 @@ const Series = () => {
 
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [search, setSearch] = useState('');
-  const [submittedSearch, setSubmittedSearch] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [submittedSearch, setSubmittedSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
   const [meta, setMeta] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axiosClient.get('/departments', {
+        const response = await axiosClient.get("/departments", {
           params: {
             page: 1,
             limit: 100,
@@ -41,7 +45,12 @@ const Series = () => {
 
         setDepartments(response.data.data.data || []);
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load departments');
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoadingDepartments(false);
       }
@@ -55,7 +64,7 @@ const Series = () => {
       try {
         setLoading(true);
 
-        const response = await axiosClient.get('/series', {
+        const response = await axiosClient.get("/series", {
           params: {
             page,
             limit,
@@ -68,9 +77,14 @@ const Series = () => {
 
         setSeriesList(result.data || []);
         setMeta(result);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load series');
+        if (isForbiddenError(err)) {
+          setAccessDenied(true);
+          return;
+        }
+
+        setError(getApiErrorMessage(err, "Failed to load data"));
       } finally {
         setLoading(false);
       }
@@ -106,9 +120,9 @@ const Series = () => {
     setEditingId(series.SeriesID);
 
     setForm({
-      ItemNoID: series.ItemNoID || '',
-      SeriesName: series.SeriesName || '',
-      DepartmentID: series.DepartmentID || '',
+      ItemNoID: series.ItemNoID || "",
+      SeriesName: series.SeriesName || "",
+      DepartmentID: series.DepartmentID || "",
     });
   };
 
@@ -117,8 +131,8 @@ const Series = () => {
 
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       const payload = {
         ItemNoID: form.ItemNoID,
@@ -128,16 +142,16 @@ const Series = () => {
 
       if (editingId) {
         await axiosClient.put(`/series/${editingId}`, payload);
-        setSuccess('Series updated successfully.');
+        setSuccess("Series updated successfully.");
       } else {
-        await axiosClient.post('/series', payload);
-        setSuccess('Series created successfully.');
+        await axiosClient.post("/series", payload);
+        setSuccess("Series created successfully.");
       }
 
       resetForm();
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save series');
+      setError(err.response?.data?.message || "Failed to save series");
     } finally {
       setSaving(false);
     }
@@ -145,23 +159,25 @@ const Series = () => {
 
   const handleDelete = async (seriesId) => {
     const confirmed = window.confirm(
-      'Delete this series? Existing specific records under this series may be affected.'
+      "Delete this series? Existing specific records under this series may be affected.",
     );
 
     if (!confirmed) return;
 
     try {
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       await axiosClient.delete(`/series/${seriesId}`);
 
-      setSuccess('Series deleted successfully.');
+      setSuccess("Series deleted successfully.");
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete series');
+      setError(err.response?.data?.message || "Failed to delete series");
     }
   };
+
+  if (accessDenied) return <AccessDenied />;
 
   return (
     <div>
@@ -172,7 +188,7 @@ const Series = () => {
 
       <div style={styles.grid}>
         <div style={styles.card}>
-          <h2>{editingId ? 'Edit Series' : 'Create Series'}</h2>
+          <h2>{editingId ? "Edit Series" : "Create Series"}</h2>
 
           <form onSubmit={handleSubmit}>
             <label>Item No.</label>
@@ -205,7 +221,9 @@ const Series = () => {
               required
             >
               <option value="">
-                {loadingDepartments ? 'Loading departments...' : 'Select department'}
+                {loadingDepartments
+                  ? "Loading departments..."
+                  : "Select department"}
               </option>
 
               {departments.map((department) => (
@@ -220,7 +238,7 @@ const Series = () => {
 
             <div style={styles.actions}>
               <button type="submit" disabled={saving} style={styles.button}>
-                {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                {saving ? "Saving..." : editingId ? "Update" : "Create"}
               </button>
 
               {editingId && (
@@ -298,7 +316,7 @@ const Series = () => {
                           <td style={styles.td}>{series.ItemNoID}</td>
                           <td style={styles.td}>{series.SeriesName}</td>
                           <td style={styles.td}>
-                            {series.Department?.DepartmentName || '-'}
+                            {series.Department?.DepartmentName || "-"}
                           </td>
                           <td style={styles.td}>
                             <button
@@ -353,121 +371,121 @@ const Series = () => {
 
 const styles = {
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(300px, 420px) 1fr',
-    gap: '16px',
-    alignItems: 'start',
+    display: "grid",
+    gridTemplateColumns: "minmax(300px, 420px) 1fr",
+    gap: "16px",
+    alignItems: "start",
   },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
   },
   header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '12px',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   searchForm: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
+    display: "flex",
+    gap: "8px",
+    flexWrap: "wrap",
   },
   input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    margin: '6px 0 14px',
+    width: "100%",
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    margin: "6px 0 14px",
   },
   searchInput: {
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
   },
   actions: {
-    display: 'flex',
-    gap: '8px',
+    display: "flex",
+    gap: "8px",
   },
   button: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
   cancelButton: {
-    padding: '10px 16px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   smallButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
-    marginRight: '6px',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
+    marginRight: "6px",
   },
   deleteButton: {
-    padding: '6px 10px',
-    border: 'none',
-    borderRadius: '6px',
-    background: '#dc2626',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#dc2626",
+    color: "#fff",
+    cursor: "pointer",
   },
   tableWrap: {
-    overflowX: 'auto',
-    marginTop: '16px',
+    overflowX: "auto",
+    marginTop: "16px",
   },
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
   th: {
-    textAlign: 'left',
-    padding: '12px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    textAlign: "left",
+    padding: "12px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
+    padding: "12px",
+    borderBottom: "1px solid #e5e7eb",
   },
   pagination: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '16px',
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "16px",
   },
   pageButton: {
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    padding: "8px 12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
   },
   success: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#dcfce7',
-    color: '#166534',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
+    marginBottom: "16px",
   },
 };
 
