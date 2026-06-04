@@ -2,22 +2,46 @@ export const sidebarLinks = [
   {
     path: "/dashboard",
     label: "Dashboard",
-    roles: ["Admin", "Records Officer", "Viewer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+      "Department Head",
+      "Department Custodian",
+      "Viewer",
+    ],
   },
   {
     path: "/requests",
     label: "Requests",
-    roles: ["Admin", "Records Officer", "Viewer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+      "Department Head",
+      "Department Custodian",
+      "Viewer",
+    ],
   },
+
+  // Records setup
   {
     path: "/series",
     label: "Series",
-    roles: ["Admin", "Records Officer", "Viewer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
   {
     path: "/specifics",
     label: "Specifics",
-    roles: ["Admin", "Records Officer", "Viewer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
 
   // Admin setup pages
@@ -26,37 +50,60 @@ export const sidebarLinks = [
     label: "Departments",
     roles: ["Admin"],
   },
-  
+
   {
     path: "/users",
     label: "Users",
     roles: ["Admin"],
   },
+
   {
     path: "/audit-logs",
     label: "Audit Logs",
-    roles: ["Admin"],
+    roles: [
+      "Admin",
+      "Records Head",
+    ],
   },
+
   {
     path: "/agency-forms",
     label: "Office Profiles",
-    roles: ["Admin", "Records Officer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
 
   // Cabinet module
   {
     path: "/cabinets",
     label: "Cabinets",
-    roles: ["Admin", "Records Officer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
+
   {
     path: "/floor-map",
     label: "Floor Map",
-    roles: ["Admin", "Records Officer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
+
   {
     path: "/record-locations",
     label: "Record Locations",
-    roles: ["Admin", "Records Officer"],
+    roles: [
+      "Admin",
+      "Records Head",
+      "Records Officer",
+    ],
   },
 ];
