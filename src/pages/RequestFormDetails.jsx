@@ -51,7 +51,42 @@ const RequestFormDetails = () => {
   };
 
   useEffect(() => {
-    fetchRequestForm();
+    let isMounted = true;
+
+    const loadRequestForm = async () => {
+      try {
+        setLoading(true);
+
+        const response = await axiosClient.get(`/request-forms/${id}`);
+        const data = response.data.data;
+
+        if (!isMounted) return;
+
+        setRequestForm(data);
+
+        if (data.FormData) {
+          setFormData({
+            ...defaultAnnexAData,
+            ...data.FormData,
+          });
+        }
+
+        setError("");
+      } catch (err) {
+        if (!isMounted) return;
+        setError(err.response?.data?.message || "Failed to load request form");
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadRequestForm();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const handleChange = (e) => {
@@ -139,7 +174,10 @@ const RequestFormDetails = () => {
 
       <div style={styles.summaryGrid}>
         <SummaryCard title="Form Code" value={formCode} />
-        <SummaryCard title="Category" value={requestForm.RequestFormType?.FormCategory} />
+        <SummaryCard
+          title="Category"
+          value={requestForm.RequestFormType?.FormCategory}
+        />
         <SummaryCard title="Status" value={requestForm.Status} />
         <SummaryCard title="Request ID" value={requestForm.RequestID} />
       </div>
@@ -242,7 +280,8 @@ const RequestFormDetails = () => {
         <div style={styles.card}>
           <h2>Generic Form Editor</h2>
           <p style={styles.muted}>
-            This form editor is not yet customized. For now, you can view basic metadata only.
+            This form editor is not yet customized. For now, you can view basic
+            metadata only.
           </p>
         </div>
       )}

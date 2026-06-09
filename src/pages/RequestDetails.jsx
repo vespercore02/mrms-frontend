@@ -114,6 +114,63 @@ const RequestDetails = () => {
     }
   };
 
+  const getCompletionStyle = (label) => {
+    if (label === "Approved") return styles.approvedBadge;
+    if (label === "Reviewed") return styles.reviewedBadge;
+    if (label === "Completed") return styles.completedBadge;
+    if (label === "Draft Saved") return styles.draftBadge;
+
+    return styles.notStartedBadge;
+  };
+
+  const getFormCompletion = (form) => {
+    const hasData = form.FormData && Object.keys(form.FormData).length > 0;
+
+    if (form.Status === "APPROVED") return "Approved";
+    if (form.Status === "REVIEWED") return "Reviewed";
+    if (form.Status === "SUBMITTED") return "Completed";
+    if (hasData) return "Draft Saved";
+
+    return "Not Started";
+  };
+
+  const isFormCompleted = (form) => {
+    return ["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status);
+  };
+
+  const getRequiredForms = () => {
+    return requestForms.filter((form) => {
+      const formCode = form.RequestFormType?.FormCode;
+
+      return ["ANNEX_A", "ANNEX_B"].includes(formCode);
+    });
+  };
+
+  const areRequiredFormsCompleted = () => {
+    const requiredForms = getRequiredForms();
+
+    if (requiredForms.length === 0) return false;
+
+    return requiredForms.every((form) => isFormCompleted(form));
+  };
+
+  const getRequiredFormsMessage = () => {
+    const requiredForms = getRequiredForms();
+    const incompleteForms = requiredForms.filter(
+      (form) => !isFormCompleted(form),
+    );
+
+    if (incompleteForms.length === 0) {
+      return "All required forms are completed.";
+    }
+
+    const names = incompleteForms
+      .map((form) => form.RequestFormType?.FormCode || "Unknown Form")
+      .join(", ");
+
+    return `Complete required forms first: ${names}`;
+  };
+
   if (loading) return <p>Loading request details...</p>;
 
   if (!request) {
@@ -211,8 +268,18 @@ const RequestDetails = () => {
               <button
                 type="button"
                 onClick={handleSubmitRequest}
-                disabled={submittingRequest}
-                style={styles.submitButton}
+                disabled={submittingRequest || !areRequiredFormsCompleted()}
+                style={{
+                  ...styles.submitButton,
+                  ...(submittingRequest || !areRequiredFormsCompleted()
+                    ? styles.disabledButton
+                    : {}),
+                }}
+                title={
+                  areRequiredFormsCompleted()
+                    ? "Submit request"
+                    : getRequiredFormsMessage()
+                }
               >
                 {submittingRequest ? "Submitting..." : "Submit Request"}
               </button>
@@ -256,6 +323,19 @@ const RequestDetails = () => {
       <div style={styles.card}>
         <h2>Request Forms</h2>
 
+        {request?.Status === "DRAFT" && (
+          <div
+            style={{
+              ...styles.infoBox,
+              ...(areRequiredFormsCompleted()
+                ? styles.readyBox
+                : styles.warningBox),
+            }}
+          >
+            {getRequiredFormsMessage()}
+          </div>
+        )}
+
         {loadingForms ? (
           <p>Loading request forms...</p>
         ) : requestForms.length === 0 ? (
@@ -269,6 +349,7 @@ const RequestDetails = () => {
                   <th style={styles.th}>Form Name</th>
                   <th style={styles.th}>Category</th>
                   <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Completion</th>
                   <th style={styles.th}>Remarks</th>
                   <th style={styles.th}>Action</th>
                 </tr>
@@ -288,6 +369,22 @@ const RequestDetails = () => {
                     </td>
                     <td style={styles.td}>
                       <span style={styles.badge}>{form.Status}</span>
+                    </td>
+                    <td style={styles.td}>
+                      {(() => {
+                        const label = getFormCompletion(form);
+
+                        return (
+                          <span
+                            style={{
+                              ...styles.badge,
+                              ...getCompletionStyle(label),
+                            }}
+                          >
+                            {label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={styles.td}>{form.Remarks || "-"}</td>
                     <td style={styles.td}>
@@ -422,6 +519,49 @@ const styles = {
     background: "#16a34a",
     color: "#fff",
     cursor: "pointer",
+  },
+
+  approvedBadge: {
+    background: "#dcfce7",
+    color: "#166534",
+  },
+  reviewedBadge: {
+    background: "#dbeafe",
+    color: "#1d4ed8",
+  },
+  completedBadge: {
+    background: "#ede9fe",
+    color: "#5b21b6",
+  },
+  draftBadge: {
+    background: "#fef3c7",
+    color: "#92400e",
+  },
+  notStartedBadge: {
+    background: "#e5e7eb",
+    color: "#374151",
+  },
+
+  infoBox: {
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "16px",
+    fontSize: "14px",
+  },
+
+  readyBox: {
+    background: "#dcfce7",
+    color: "#166534",
+  },
+
+  warningBox: {
+    background: "#fef3c7",
+    color: "#92400e",
+  },
+
+  disabledButton: {
+    background: "#9ca3af",
+    cursor: "not-allowed",
   },
 };
 
