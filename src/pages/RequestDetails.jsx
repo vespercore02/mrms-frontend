@@ -21,6 +21,8 @@ const RequestDetails = () => {
   const [requestForms, setRequestForms] = useState([]);
   const [loadingForms, setLoadingForms] = useState(true);
 
+  const [submittingRequest, setSubmittingRequest] = useState(false);
+
   useEffect(() => {
     const fetchRequest = async () => {
       try {
@@ -83,6 +85,32 @@ const RequestDetails = () => {
       setError(err.response?.data?.message || "Failed to update status");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleSubmitRequest = async () => {
+    const confirmed = window.confirm(
+      "Submit this draft request? Make sure Annex A is completed before submitting.",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setSubmittingRequest(true);
+      setError("");
+      setSuccess("");
+
+      await axiosClient.patch(`/requests/${id}/submit`);
+
+      setSuccess("Request submitted successfully.");
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to submit request. Please check required forms.",
+      );
+    } finally {
+      setSubmittingRequest(false);
     }
   };
 
@@ -178,6 +206,17 @@ const RequestDetails = () => {
             <button type="submit" disabled={updating} style={styles.button}>
               {updating ? "Updating..." : "Update Status"}
             </button>
+
+            {request?.Status === "DRAFT" && (
+              <button
+                type="button"
+                onClick={handleSubmitRequest}
+                disabled={submittingRequest}
+                style={styles.submitButton}
+              >
+                {submittingRequest ? "Submitting..." : "Submit Request"}
+              </button>
+            )}
           </form>
         </div>
       </div>
@@ -373,6 +412,14 @@ const styles = {
     border: "none",
     borderRadius: "6px",
     background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
+  },
+  submitButton: {
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#16a34a",
     color: "#fff",
     cursor: "pointer",
   },
