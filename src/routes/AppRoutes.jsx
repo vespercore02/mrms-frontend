@@ -8,7 +8,6 @@ import Series from '../pages/Series';
 import Specifics from '../pages/Specifics';
 import Users from '../pages/Users';
 import AuditLogs from '../pages/AuditLogs';
-import RequestDetails from '../pages/RequestDetails';
 import AgencyForms from '../pages/AgencyForms';
 
 import Layout from '../components/Layout';
@@ -23,6 +22,9 @@ import FloorMap from "../pages/FloorMap";
 
 import CreateRequest from '../pages/CreateRequest';
 import CreateRequestV2 from "../pages/CreateRequestV2";
+
+import RequestDetails from '../pages/RequestDetails';
+import RequestFormDetails from "../pages/RequestFormDetails";
 
 const withLayout = (page) => (
   <ProtectedRoute>
@@ -44,7 +46,6 @@ const AppRoutes = () => {
         <Route path="/specifics" element={withLayout(<Specifics />)} />
         <Route path="/users" element={withLayout(<Users />)} />
         <Route path="/audit-logs" element={withLayout(<AuditLogs />)} />
-        <Route path="/requests/:id" element={withLayout(<RequestDetails />)} />
 
         <Route path="/requests/create" element={withLayout(<CreateRequest />)} />
         <Route path="/agency-forms" element={withLayout(<AgencyForms />)} />
@@ -58,7 +59,10 @@ const AppRoutes = () => {
         
         <Route path="/requests" element={withLayout(<Requests />)} />
         <Route path="/requests/create-v2" element={withLayout(<CreateRequestV2 />)} />
-        
+
+        <Route path="/requests/:id" element={withLayout(<RequestDetails />)} />
+        <Route path="/request-forms/:id" element={withLayout(<RequestFormDetails />)} />
+
       </Routes>
     </BrowserRouter>
   );
