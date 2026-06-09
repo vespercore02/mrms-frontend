@@ -9,7 +9,6 @@ import Specifics from '../pages/Specifics';
 import Users from '../pages/Users';
 import AuditLogs from '../pages/AuditLogs';
 import RequestDetails from '../pages/RequestDetails';
-import CreateRequest from '../pages/CreateRequest';
 import AgencyForms from '../pages/AgencyForms';
 
 import Layout from '../components/Layout';
@@ -21,6 +20,9 @@ import CabinetBayDetails from "../pages/CabinetBayDetails";
 import StorageBoxDetails from "../pages/StorageBoxDetails";
 import RecordLocations from "../pages/RecordLocations";
 import FloorMap from "../pages/FloorMap";
+
+import CreateRequest from '../pages/CreateRequest';
+import CreateRequestV2 from "../pages/CreateRequestV2";
 
 const withLayout = (page) => (
   <ProtectedRoute>
@@ -37,7 +39,6 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
 
         <Route path="/dashboard" element={withLayout(<Dashboard />)} />
-        <Route path="/requests" element={withLayout(<Requests />)} />
         <Route path="/departments" element={withLayout(<Departments />)} />
         <Route path="/series" element={withLayout(<Series />)} />
         <Route path="/specifics" element={withLayout(<Specifics />)} />
@@ -54,7 +55,10 @@ const AppRoutes = () => {
         <Route path="/storage-boxes/:id" element={withLayout(<StorageBoxDetails />)} />
         <Route path="/record-locations" element={withLayout(<RecordLocations />)} />
         <Route path="/floor-map" element={withLayout(<FloorMap />)} />
-
+        
+        <Route path="/requests" element={withLayout(<Requests />)} />
+        <Route path="/requests/create-v2" element={withLayout(<CreateRequestV2 />)} />
+        
       </Routes>
     </BrowserRouter>
   );
