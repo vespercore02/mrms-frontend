@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import axiosClient from '../api/axiosClient';
-import { getUser } from '../utils/auth';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import axiosClient from "../api/axiosClient";
+import { getUser } from "../utils/auth";
 
 const RequestDetails = () => {
   const { id } = useParams();
@@ -9,14 +9,17 @@ const RequestDetails = () => {
   const user = getUser();
 
   const [request, setRequest] = useState(null);
-  const [status, setStatus] = useState('');
-  const [remarks, setRemarks] = useState('');
+  const [status, setStatus] = useState("");
+  const [remarks, setRemarks] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [requestForms, setRequestForms] = useState([]);
+  const [loadingForms, setLoadingForms] = useState(true);
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -28,15 +31,35 @@ const RequestDetails = () => {
 
         setRequest(data);
         setStatus(data.Status);
-        setError('');
+        setError("");
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load request');
+        setError(err.response?.data?.message || "Failed to load request");
       } finally {
         setLoading(false);
       }
     };
 
+    const fetchRequestForms = async () => {
+      try {
+        setLoadingForms(true);
+
+        const response = await axiosClient.get("/request-forms", {
+          params: {
+            requestId: id,
+          },
+        });
+
+        setRequestForms(response.data.data || []);
+      } catch (err) {
+        console.error("Failed to load request forms", err);
+        setRequestForms([]);
+      } finally {
+        setLoadingForms(false);
+      }
+    };
+
     fetchRequest();
+    fetchRequestForms();
   }, [id, refreshKey]);
 
   const handleUpdateStatus = async (e) => {
@@ -44,8 +67,8 @@ const RequestDetails = () => {
 
     try {
       setUpdating(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       await axiosClient.patch(`/requests/${id}/status`, {
         Status: status,
@@ -53,11 +76,11 @@ const RequestDetails = () => {
         Remarks: remarks,
       });
 
-      setSuccess('Request status updated successfully.');
-      setRemarks('');
+      setSuccess("Request status updated successfully.");
+      setRemarks("");
       setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update status');
+      setError(err.response?.data?.message || "Failed to update status");
     } finally {
       setUpdating(false);
     }
@@ -68,7 +91,7 @@ const RequestDetails = () => {
   if (!request) {
     return (
       <div>
-        <button onClick={() => navigate('/requests')} style={styles.backBtn}>
+        <button onClick={() => navigate("/requests")} style={styles.backBtn}>
           Back
         </button>
         <p>Request not found.</p>
@@ -78,7 +101,7 @@ const RequestDetails = () => {
 
   return (
     <div>
-      <button onClick={() => navigate('/requests')} style={styles.backBtn}>
+      <button onClick={() => navigate("/requests")} style={styles.backBtn}>
         ← Back to Requests
       </button>
 
@@ -93,7 +116,7 @@ const RequestDetails = () => {
           <Info label="Request Code" value={request.RequestCode} />
           <Info label="Request Type" value={request.RequestType} />
           <Info label="Status" value={request.Status} />
-          <Info label="Remarks" value={request.Remarks || '-'} />
+          <Info label="Remarks" value={request.Remarks || "-"} />
           <Info
             label="Created"
             value={new Date(request.createdAt).toLocaleString()}
@@ -102,16 +125,25 @@ const RequestDetails = () => {
 
         <div style={styles.card}>
           <h2>Agency Information</h2>
-          <Info label="Agency Name" value={request.AgencyForm?.AgencyName || '-'} />
-          <Info label="Agency Address" value={request.AgencyForm?.AgencyAddress || '-'} />
-          <Info label="Agency Contact" value={request.AgencyForm?.AgencyContact || '-'} />
+          <Info
+            label="Agency Name"
+            value={request.AgencyForm?.AgencyName || "-"}
+          />
+          <Info
+            label="Agency Address"
+            value={request.AgencyForm?.AgencyAddress || "-"}
+          />
+          <Info
+            label="Agency Contact"
+            value={request.AgencyForm?.AgencyContact || "-"}
+          />
         </div>
 
         <div style={styles.card}>
           <h2>Requester</h2>
-          <Info label="Name" value={request.requester?.FullName || '-'} />
-          <Info label="Email" value={request.requester?.Email || '-'} />
-          <Info label="Role" value={request.requester?.Role?.RoleName || '-'} />
+          <Info label="Name" value={request.requester?.FullName || "-"} />
+          <Info label="Email" value={request.requester?.Email || "-"} />
+          <Info label="Role" value={request.requester?.Role?.RoleName || "-"} />
         </div>
 
         <div style={styles.card}>
@@ -144,7 +176,7 @@ const RequestDetails = () => {
             />
 
             <button type="submit" disabled={updating} style={styles.button}>
-              {updating ? 'Updating...' : 'Update Status'}
+              {updating ? "Updating..." : "Update Status"}
             </button>
           </form>
         </div>
@@ -169,9 +201,9 @@ const RequestDetails = () => {
             <tbody>
               {request.RequestStatusHistories?.map((history) => (
                 <tr key={history.HistoryID}>
-                  <td style={styles.td}>{history.OldStatus || '-'}</td>
+                  <td style={styles.td}>{history.OldStatus || "-"}</td>
                   <td style={styles.td}>{history.NewStatus}</td>
-                  <td style={styles.td}>{history.Remarks || '-'}</td>
+                  <td style={styles.td}>{history.Remarks || "-"}</td>
                   <td style={styles.td}>
                     {new Date(history.createdAt).toLocaleString()}
                   </td>
@@ -179,6 +211,62 @@ const RequestDetails = () => {
               ))}
             </tbody>
           </table>
+        )}
+      </div>
+
+      <div style={styles.card}>
+        <h2>Request Forms</h2>
+
+        {loadingForms ? (
+          <p>Loading request forms...</p>
+        ) : requestForms.length === 0 ? (
+          <p>No forms created for this request yet.</p>
+        ) : (
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Form Code</th>
+                  <th style={styles.th}>Form Name</th>
+                  <th style={styles.th}>Category</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Remarks</th>
+                  <th style={styles.th}>Action</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {requestForms.map((form) => (
+                  <tr key={form.RequestFormID}>
+                    <td style={styles.td}>
+                      <strong>{form.RequestFormType?.FormCode || "-"}</strong>
+                    </td>
+                    <td style={styles.td}>
+                      {form.RequestFormType?.FormName || "-"}
+                    </td>
+                    <td style={styles.td}>
+                      {form.RequestFormType?.FormCategory || "-"}
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.badge}>{form.Status}</span>
+                    </td>
+                    <td style={styles.td}>{form.Remarks || "-"}</td>
+                    <td style={styles.td}>
+                      <button
+                        type="button"
+                        style={styles.smallButton}
+                        onClick={() =>
+                          navigate(`/request-forms/${form.RequestFormID}`)
+                        }
+                      >
+                        Open Form
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -193,79 +281,100 @@ const Info = ({ label, value }) => (
 
 const styles = {
   backBtn: {
-    marginBottom: '16px',
-    padding: '8px 12px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    background: '#fff',
-    cursor: 'pointer',
+    marginBottom: "16px",
+    padding: "8px 12px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    background: "#fff",
+    cursor: "pointer",
   },
   grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '16px',
-    marginBottom: '16px',
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "16px",
+    marginBottom: "16px",
   },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
-    marginBottom: '16px',
+    background: "#fff",
+    padding: "20px",
+    borderRadius: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.06)",
+    marginBottom: "16px",
   },
   info: {
-    margin: '8px 0',
+    margin: "8px 0",
   },
   input: {
-    width: '100%',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    margin: '6px 0 12px',
+    width: "100%",
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    margin: "6px 0 12px",
   },
   textarea: {
-    width: '100%',
-    minHeight: '90px',
-    padding: '10px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    margin: '6px 0 12px',
+    width: "100%",
+    minHeight: "90px",
+    padding: "10px",
+    border: "1px solid #d1d5db",
+    borderRadius: "8px",
+    margin: "6px 0 12px",
   },
   button: {
-    padding: '10px 16px',
-    border: 'none',
-    borderRadius: '8px',
-    background: '#2563eb',
-    color: '#fff',
-    cursor: 'pointer',
+    padding: "10px 16px",
+    border: "none",
+    borderRadius: "8px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
   error: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#fee2e2',
-    color: '#991b1b',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#fee2e2",
+    color: "#991b1b",
+    marginBottom: "16px",
   },
   success: {
-    padding: '12px',
-    borderRadius: '8px',
-    background: '#dcfce7',
-    color: '#166534',
-    marginBottom: '16px',
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
+    marginBottom: "16px",
   },
   table: {
-    width: '100%',
-    borderCollapse: 'collapse',
+    width: "100%",
+    borderCollapse: "collapse",
   },
   th: {
-    textAlign: 'left',
-    padding: '12px',
-    background: '#f9fafb',
-    borderBottom: '1px solid #e5e7eb',
+    textAlign: "left",
+    padding: "12px",
+    background: "#f9fafb",
+    borderBottom: "1px solid #e5e7eb",
   },
   td: {
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
+    padding: "12px",
+    borderBottom: "1px solid #e5e7eb",
+  },
+
+  tableWrap: {
+    overflowX: "auto",
+    marginTop: "16px",
+  },
+  badge: {
+    padding: "4px 10px",
+    borderRadius: "999px",
+    background: "#dbeafe",
+    color: "#1d4ed8",
+    fontSize: "12px",
+    fontWeight: "bold",
+  },
+  smallButton: {
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#2563eb",
+    color: "#fff",
+    cursor: "pointer",
   },
 };
 
