@@ -203,6 +203,25 @@ const RequestDetails = () => {
     );
   };
 
+  const getRequestProgress = () => {
+    const requiredForms = getRequiredForms();
+    const totalRequired = requiredForms.length;
+    const completedForms = requiredForms.filter(isFormCompleted).length;
+    const remainingForms = totalRequired - completedForms;
+
+    const percentage =
+      totalRequired === 0
+        ? 0
+        : Math.round((completedForms / totalRequired) * 100);
+
+    return {
+      totalRequired,
+      completedForms,
+      remainingForms,
+      percentage,
+    };
+  };
+
   if (loading) return <p>Loading request details...</p>;
 
   if (!request) {
@@ -472,6 +491,11 @@ const RequestDetails = () => {
                     </td>
                     <td style={styles.td}>
                       {form.RequestFormType?.FormName || "-"}
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.badge}>
+                        {form.RequirementType || "OPTIONAL"}
+                      </span>
                     </td>
                     <td style={styles.td}>
                       {form.RequestFormType?.FormCategory || "-"}
