@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
+import AnnexAEditor from "../components/requestForms/AnnexAEditor";
+import AnnexBEditor from "../components/requestForms/AnnexBEditor";
+import GenericFormEditor from "../components/requestForms/GenericFormEditor";
 
 const defaultAnnexAData = {
   departmentOffice: "",
@@ -9,6 +12,24 @@ const defaultAnnexAData = {
   inclusiveDates: "",
   volumeInCubicMeter: "",
   timeValue: "TEMPORARY",
+  remarks: "",
+};
+
+const defaultAnnexBData = {
+  croAuthorityNumber: "",
+  departmentOffice: "",
+  recordsOfficer: "",
+  departmentHead: "",
+  accessRestriction: "",
+  boxNumber: "",
+  disposalAuthority: "",
+  recordsSeriesTitle: "",
+  recordsDescription: "",
+  inclusiveDates: "",
+  volume: "",
+  accessionNumber: "",
+  receivedBy: "",
+  dateReceived: "",
   remarks: "",
 };
 
@@ -35,12 +56,13 @@ const RequestFormDetails = () => {
 
       setRequestForm(data);
 
-      if (data.FormData) {
-        setFormData({
-          ...defaultAnnexAData,
-          ...data.FormData,
-        });
-      }
+      const formCode = data.RequestFormType?.FormCode;
+      const defaultData = getDefaultFormData(formCode);
+
+      setFormData({
+        ...defaultData,
+        ...(data.FormData || {}),
+      });
 
       setError("");
     } catch (err) {
@@ -146,6 +168,13 @@ const RequestFormDetails = () => {
     return `/requests/${requestForm.RequestID}`;
   };
 
+  const getDefaultFormData = (formCode) => {
+    if (formCode === "ANNEX_A") return defaultAnnexAData;
+    if (formCode === "ANNEX_B") return defaultAnnexBData;
+
+    return {};
+  };
+
   if (loading) return <p>Loading request form...</p>;
 
   if (!requestForm) {
@@ -183,107 +212,25 @@ const RequestFormDetails = () => {
       </div>
 
       {formCode === "ANNEX_A" ? (
-        <div style={styles.card}>
-          <h2>Annex A Draft</h2>
-          <p style={styles.muted}>
-            Request for Authority to Transfer Non-Current Records.
-          </p>
-
-          <form onSubmit={handleSaveDraft}>
-            <label>Department / Office</label>
-            <input
-              name="departmentOffice"
-              value={formData.departmentOffice}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Accounting Office"
-              required
-            />
-
-            <label>Location of Records</label>
-            <input
-              name="locationOfRecords"
-              value={formData.locationOfRecords}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="Storage room / office location"
-              required
-            />
-
-            <label>Records Description</label>
-            <textarea
-              name="recordsDescription"
-              value={formData.recordsDescription}
-              onChange={handleChange}
-              style={styles.textarea}
-              placeholder="Brief description of records..."
-              required
-            />
-
-            <label>Inclusive Dates</label>
-            <input
-              name="inclusiveDates"
-              value={formData.inclusiveDates}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="2020-2024"
-            />
-
-            <label>Volume in Cubic Meter</label>
-            <input
-              type="number"
-              step="0.01"
-              name="volumeInCubicMeter"
-              value={formData.volumeInCubicMeter}
-              onChange={handleChange}
-              style={styles.input}
-              placeholder="1.25"
-            />
-
-            <label>Time Value</label>
-            <select
-              name="timeValue"
-              value={formData.timeValue}
-              onChange={handleChange}
-              style={styles.input}
-            >
-              <option value="TEMPORARY">Temporary</option>
-              <option value="PERMANENT">Permanent</option>
-            </select>
-
-            <label>Remarks</label>
-            <textarea
-              name="remarks"
-              value={formData.remarks}
-              onChange={handleChange}
-              style={styles.textarea}
-              placeholder="Additional remarks..."
-            />
-
-            <div style={styles.actions}>
-              <button type="submit" disabled={saving} style={styles.button}>
-                {saving ? "Saving..." : "Save Draft"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSubmitForm}
-                disabled={submitting}
-                style={styles.submitButton}
-              >
-                {submitting ? "Submitting..." : "Submit Form"}
-              </button>
-            </div>
-          </form>
-        </div>
+        <AnnexAEditor
+          formData={formData}
+          handleChange={handleChange}
+          handleSaveDraft={handleSaveDraft}
+          handleSubmitForm={handleSubmitForm}
+          saving={saving}
+          submitting={submitting}
+        />
+      ) : formCode === "ANNEX_B" ? (
+        <AnnexBEditor
+          formData={formData}
+          handleChange={handleChange}
+          handleSaveDraft={handleSaveDraft}
+          handleSubmitForm={handleSubmitForm}
+          saving={saving}
+          submitting={submitting}
+        />
       ) : (
-        <div style={styles.card}>
-          <h2>Generic Form Editor</h2>
-          <p style={styles.muted}>
-            This form editor is not yet customized. For now, you can view basic
-            metadata only.
-          </p>
-        </div>
+        <GenericFormEditor requestForm={requestForm} />
       )}
     </div>
   );

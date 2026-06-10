@@ -171,6 +171,32 @@ const RequestDetails = () => {
     return `Complete required forms first: ${names}`;
   };
 
+  const getFormChecklistStatus = (form) => {
+    if (["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status)) {
+      return {
+        label: "Completed",
+        symbol: "✓",
+        style: styles.completedChecklist,
+      };
+    }
+
+    const hasData = form.FormData && Object.keys(form.FormData).length > 0;
+
+    if (hasData) {
+      return {
+        label: "Draft Saved",
+        symbol: "◐",
+        style: styles.draftChecklist,
+      };
+    }
+
+    return {
+      label: "Not Started",
+      symbol: "○",
+      style: styles.pendingChecklist,
+    };
+  };
+
   if (loading) return <p>Loading request details...</p>;
 
   if (!request) {
@@ -333,6 +359,38 @@ const RequestDetails = () => {
             }}
           >
             {getRequiredFormsMessage()}
+          </div>
+        )}
+
+        {requestForms.length > 0 && (
+          <div style={styles.card}>
+            <h2>Required Forms Dashboard</h2>
+
+            <div style={styles.checklistGrid}>
+              {requestForms.map((form) => {
+                const status = getFormChecklistStatus(form);
+
+                return (
+                  <div
+                    key={form.RequestFormID}
+                    style={{
+                      ...styles.checklistItem,
+                      ...status.style,
+                    }}
+                  >
+                    <div style={styles.checklistSymbol}>{status.symbol}</div>
+
+                    <div>
+                      <strong>{form.RequestFormType?.FormCode}</strong>
+                      <p style={styles.checklistName}>
+                        {form.RequestFormType?.FormName}
+                      </p>
+                      <small>{status.label}</small>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -562,6 +620,53 @@ const styles = {
   disabledButton: {
     background: "#9ca3af",
     cursor: "not-allowed",
+  },
+
+  checklistGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px",
+  },
+
+  checklistItem: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    padding: "14px",
+    borderRadius: "12px",
+    border: "1px solid #e5e7eb",
+  },
+
+  checklistSymbol: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "999px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "bold",
+    background: "#fff",
+  },
+
+  checklistName: {
+    margin: "4px 0",
+    color: "#374151",
+    fontSize: "13px",
+  },
+
+  completedChecklist: {
+    background: "#dcfce7",
+    color: "#166534",
+  },
+
+  draftChecklist: {
+    background: "#fef3c7",
+    color: "#92400e",
+  },
+
+  pendingChecklist: {
+    background: "#f3f4f6",
+    color: "#374151",
   },
 };
 
