@@ -197,6 +197,29 @@ const RequestDetails = () => {
     };
   };
 
+  const requiredFormCodes = ["ANNEX_A", "ANNEX_B"];
+
+  const conditionalFormCodes = ["ANNEX_C"];
+
+  const optionalFormCodes = ["NAP_FORM_1", "NAP_FORM_2", "NAP_FORM_3"];
+
+  const getRequiredChecklistForms = () => {
+    return requestForms.filter((form) =>
+      requiredFormCodes.includes(form.RequestFormType?.FormCode),
+    );
+  };
+
+  const getConditionalChecklistForms = () => {
+    return requestForms.filter((form) => {
+      const formCode = form.RequestFormType?.FormCode;
+
+      return (
+        conditionalFormCodes.includes(formCode) ||
+        optionalFormCodes.includes(formCode)
+      );
+    });
+  };
+
   if (loading) return <p>Loading request details...</p>;
 
   if (!request) {
@@ -364,10 +387,12 @@ const RequestDetails = () => {
 
         {requestForms.length > 0 && (
           <div style={styles.card}>
-            <h2>Required Forms Dashboard</h2>
+            <h2>Forms Dashboard</h2>
+
+            <h3>Required Forms</h3>
 
             <div style={styles.checklistGrid}>
-              {requestForms.map((form) => {
+              {getRequiredChecklistForms().map((form) => {
                 const status = getFormChecklistStatus(form);
 
                 return (
@@ -377,6 +402,9 @@ const RequestDetails = () => {
                       ...styles.checklistItem,
                       ...status.style,
                     }}
+                    onClick={() =>
+                      navigate(`/request-forms/${form.RequestFormID}`)
+                    }
                   >
                     <div style={styles.checklistSymbol}>{status.symbol}</div>
 
@@ -391,6 +419,45 @@ const RequestDetails = () => {
                 );
               })}
             </div>
+
+            <h3 style={styles.sectionSubheading}>
+              Conditional / Optional Forms
+            </h3>
+
+            {getConditionalChecklistForms().length === 0 ? (
+              <p style={styles.muted}>
+                No conditional or optional forms attached.
+              </p>
+            ) : (
+              <div style={styles.checklistGrid}>
+                {getConditionalChecklistForms().map((form) => {
+                  const status = getFormChecklistStatus(form);
+
+                  return (
+                    <div
+                      key={form.RequestFormID}
+                      style={{
+                        ...styles.checklistItem,
+                        ...status.style,
+                      }}
+                      onClick={() =>
+                        navigate(`/request-forms/${form.RequestFormID}`)
+                      }
+                    >
+                      <div style={styles.checklistSymbol}>{status.symbol}</div>
+
+                      <div>
+                        <strong>{form.RequestFormType?.FormCode}</strong>
+                        <p style={styles.checklistName}>
+                          {form.RequestFormType?.FormName}
+                        </p>
+                        <small>{status.label}</small>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -628,14 +695,6 @@ const styles = {
     gap: "12px",
   },
 
-  checklistItem: {
-    display: "flex",
-    gap: "12px",
-    alignItems: "center",
-    padding: "14px",
-    borderRadius: "12px",
-    border: "1px solid #e5e7eb",
-  },
 
   checklistSymbol: {
     width: "36px",
@@ -667,6 +726,20 @@ const styles = {
   pendingChecklist: {
     background: "#f3f4f6",
     color: "#374151",
+  },
+
+  sectionSubheading: {
+    marginTop: "20px",
+  },
+
+  checklistItem: {
+    display: "flex",
+    gap: "12px",
+    alignItems: "center",
+    padding: "14px",
+    borderRadius: "12px",
+    border: "1px solid #e5e7eb",
+    cursor: "pointer",
   },
 };
 
