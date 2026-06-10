@@ -139,11 +139,7 @@ const RequestDetails = () => {
   };
 
   const getRequiredForms = () => {
-    return requestForms.filter((form) => {
-      const formCode = form.RequestFormType?.FormCode;
-
-      return ["ANNEX_A", "ANNEX_B"].includes(formCode);
-    });
+    return requestForms.filter((form) => form.RequirementType === "REQUIRED");
   };
 
   const areRequiredFormsCompleted = () => {
@@ -197,27 +193,14 @@ const RequestDetails = () => {
     };
   };
 
-  const requiredFormCodes = ["ANNEX_A", "ANNEX_B"];
-
-  const conditionalFormCodes = ["ANNEX_C"];
-
-  const optionalFormCodes = ["NAP_FORM_1", "NAP_FORM_2", "NAP_FORM_3"];
-
   const getRequiredChecklistForms = () => {
-    return requestForms.filter((form) =>
-      requiredFormCodes.includes(form.RequestFormType?.FormCode),
-    );
+    return requestForms.filter((form) => form.RequirementType === "REQUIRED");
   };
 
   const getConditionalChecklistForms = () => {
-    return requestForms.filter((form) => {
-      const formCode = form.RequestFormType?.FormCode;
-
-      return (
-        conditionalFormCodes.includes(formCode) ||
-        optionalFormCodes.includes(formCode)
-      );
-    });
+    return requestForms.filter((form) =>
+      ["CONDITIONAL", "OPTIONAL"].includes(form.RequirementType),
+    );
   };
 
   if (loading) return <p>Loading request details...</p>;
@@ -472,6 +455,7 @@ const RequestDetails = () => {
                 <tr>
                   <th style={styles.th}>Form Code</th>
                   <th style={styles.th}>Form Name</th>
+                  <th style={styles.th}>Requirement</th>
                   <th style={styles.th}>Category</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Completion</th>
@@ -694,7 +678,6 @@ const styles = {
     gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "12px",
   },
-
 
   checklistSymbol: {
     width: "36px",
