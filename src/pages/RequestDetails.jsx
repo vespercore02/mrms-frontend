@@ -64,6 +64,7 @@ const RequestDetails = () => {
     fetchRequestForms();
   }, [id, refreshKey]);
 
+  {/*//
   const handleUpdateStatus = async (e) => {
     e.preventDefault();
 
@@ -87,7 +88,7 @@ const RequestDetails = () => {
       setUpdating(false);
     }
   };
-
+  /*/}
   const handleSubmitRequest = async () => {
     const confirmed = window.confirm(
       "Submit this draft request? Make sure Annex A is completed before submitting.",
