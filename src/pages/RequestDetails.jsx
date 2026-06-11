@@ -64,31 +64,7 @@ const RequestDetails = () => {
     fetchRequestForms();
   }, [id, refreshKey]);
 
-  {/*//
-  const handleUpdateStatus = async (e) => {
-    e.preventDefault();
 
-    try {
-      setUpdating(true);
-      setError("");
-      setSuccess("");
-
-      await axiosClient.patch(`/requests/${id}/status`, {
-        Status: status,
-        ChangedBy: user?.UserID,
-        Remarks: remarks,
-      });
-
-      setSuccess("Request status updated successfully.");
-      setRemarks("");
-      setRefreshKey((prev) => prev + 1);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to update status");
-    } finally {
-      setUpdating(false);
-    }
-  };
-  /*/}
   const handleSubmitRequest = async () => {
     const confirmed = window.confirm(
       "Submit this draft request? Make sure Annex A is completed before submitting.",
