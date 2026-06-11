@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../api/axiosClient";
 import { useNavigate } from "react-router-dom";
+import {
+  getRequestStatusStyle,
+  formatRequestStatus,
+} from "../utils/statusColors";
 
 const Requests = () => {
   const navigate = useNavigate();
@@ -149,7 +153,14 @@ const Requests = () => {
                       </td>
 
                       <td style={styles.td}>
-                        <span style={styles.badge}>{request.Status}</span>
+                        <span
+                          style={{
+                            ...styles.badge,
+                            ...getRequestStatusStyle(request.Status),
+                          }}
+                        >
+                          {request.Status}
+                        </span>
                       </td>
 
                       <td style={styles.td}>

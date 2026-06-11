@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getUser } from "../utils/auth";
+import { getRequestStatusStyle } from "../utils/statusColors";
 
 const RequestDetails = () => {
   const { id } = useParams();
