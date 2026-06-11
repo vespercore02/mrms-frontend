@@ -6,7 +6,7 @@ import { getUser } from "../utils/auth";
 const emptyForm = {
   RequestTypeID: "",
   RequestType: "",
-  AgencyUniqueID: "",
+  DepartmentID: "",
   Remarks: "",
 };
 
@@ -14,9 +14,19 @@ const CreateRequestV2 = () => {
   const navigate = useNavigate();
   const user = getUser();
 
-  const [form, setForm] = useState(emptyForm);
+  const initialForm = {
+    ...emptyForm,
+    DepartmentID:
+      ["Department Head", "Department Custodian"].includes(
+        user?.Role?.RoleName,
+      ) && user?.DepartmentID
+        ? String(user.DepartmentID)
+        : "",
+  };
+
+  const [form, setForm] = useState(initialForm);
   const [requestTypes, setRequestTypes] = useState([]);
-  const [agencies, setAgencies] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const [loadingRequestTypes, setLoadingRequestTypes] = useState(true);
   const [loadingAgencies, setLoadingAgencies] = useState(true);
@@ -25,15 +35,20 @@ const CreateRequestV2 = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const roleName = user?.Role?.RoleName;
+  console.log("Logged user:", user);
+
+  const isDepartmentUser = ["Department Head", "Department Custodian"].includes(
+    roleName,
+  );
+
   useEffect(() => {
     const fetchRequestTypes = async () => {
       try {
         const response = await axiosClient.get("/request-v2/request-types");
         setRequestTypes(response.data.data || []);
       } catch (err) {
-        setError(
-          err.response?.data?.message || "Failed to load request types"
-        );
+        setError(err.response?.data?.message || "Failed to load request types");
       } finally {
         setLoadingRequestTypes(false);
       }
@@ -43,18 +58,44 @@ const CreateRequestV2 = () => {
   }, []);
 
   useEffect(() => {
-    const fetchAgencies = async () => {
+    const fetchDepartments = async () => {
       try {
-        const response = await axiosClient.get("/agency-forms");
-        setAgencies(response.data.data || []);
+        setLoadingAgencies(true);
+
+        const response = await axiosClient.get("/departments", {
+          params: {
+            page: 1,
+            limit: 100,
+          },
+        });
+
+        const result = response.data.data;
+
+        console.log(result);
+        
+
+        const departmentList = Array.isArray(result)
+          ? result
+          : result?.data || result?.rows || [];
+
+        console.log(
+          "Department IDs:",
+          departmentList.map((d) => ({
+            id: d.DepartmentID,
+            name: d.DepartmentName,
+          })),
+        );
+
+        setDepartments(departmentList);
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load offices");
+        setError(err.response?.data?.message || "Failed to load departments");
+        setDepartments([]);
       } finally {
         setLoadingAgencies(false);
       }
     };
 
-    fetchAgencies();
+    fetchDepartments();
   }, []);
 
   const handleChange = (e) => {
@@ -62,7 +103,7 @@ const CreateRequestV2 = () => {
 
     if (name === "RequestTypeID") {
       const selectedType = requestTypes.find(
-        (item) => Number(item.RequestTypeID) === Number(value)
+        (item) => Number(item.RequestTypeID) === Number(value),
       );
 
       setForm((prev) => ({
@@ -86,7 +127,7 @@ const CreateRequestV2 = () => {
       return false;
     }
 
-    if (!form.AgencyUniqueID) {
+    if (!form.DepartmentID) {
       setError("Please select an office / agency.");
       return false;
     }
@@ -112,7 +153,7 @@ const CreateRequestV2 = () => {
       const payload = {
         RequestTypeID: Number(form.RequestTypeID),
         RequestType: form.RequestType,
-        AgencyUniqueID: form.AgencyUniqueID,
+        DepartmentID: Number(form.DepartmentID),
         RequestedBy: user.UserID,
         Remarks: form.Remarks,
         Status: "DRAFT",
@@ -131,6 +172,11 @@ const CreateRequestV2 = () => {
       setSaving(false);
     }
   };
+
+  if (isDepartmentUser && !user?.DepartmentID) {
+    setError("Your account has no assigned department. Please contact Admin.");
+    return false;
+  }
 
   return (
     <div>
@@ -174,27 +220,42 @@ const CreateRequestV2 = () => {
             </div>
           )}
 
-          <label>Office / Agency</label>
+          <label>Department / Office</label>
+
           <select
-            name="AgencyUniqueID"
-            value={form.AgencyUniqueID}
+            name="DepartmentID"
+            value={form.DepartmentID}
             onChange={handleChange}
             style={styles.input}
-            disabled={loadingAgencies}
+            disabled={
+              loadingAgencies || (isDepartmentUser && !!user?.DepartmentID)
+            }
             required
           >
             <option value="">
               {loadingAgencies ? "Loading offices..." : "Select office"}
             </option>
 
-            {agencies.map((agency) => (
-              <option
-                key={agency.AgencyUniqueID}
-                value={agency.AgencyUniqueID}
-              >
-                {agency.AgencyName}
-              </option>
-            ))}
+            {departments.map((department, index) => {
+              const departmentId =
+                department.DepartmentID ||
+                department.id ||
+                department.ID ||
+                index;
+
+              const departmentName =
+                department.DepartmentName ||
+                department.Name ||
+                department.name ||
+                department.DepartmentCode ||
+                `Department ${departmentId}`;
+
+              return (
+                <option key={departmentId} value={String(departmentId)}>
+                  {departmentName}
+                </option>
+              );
+            })}
           </select>
 
           <label>Remarks</label>

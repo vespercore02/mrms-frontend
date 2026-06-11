@@ -9,7 +9,7 @@ const RequestDetails = () => {
   const user = getUser();
 
   const [request, setRequest] = useState(null);
-  const [status, setStatus] = useState("");
+  //const [status, setStatus] = useState("");
   const [remarks, setRemarks] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -32,7 +32,7 @@ const RequestDetails = () => {
         const data = response.data.data;
 
         setRequest(data);
-        setStatus(data.Status);
+        //setStatus(data.Status);
         setError("");
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load request");
@@ -167,42 +167,6 @@ const RequestDetails = () => {
     return `Complete required forms first: ${names}`;
   };
 
-  const getFormChecklistStatus = (form) => {
-    if (["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status)) {
-      return {
-        label: "Completed",
-        symbol: "✓",
-        style: styles.completedChecklist,
-      };
-    }
-
-    const hasData = form.FormData && Object.keys(form.FormData).length > 0;
-
-    if (hasData) {
-      return {
-        label: "Draft Saved",
-        symbol: "◐",
-        style: styles.draftChecklist,
-      };
-    }
-
-    return {
-      label: "Not Started",
-      symbol: "○",
-      style: styles.pendingChecklist,
-    };
-  };
-
-  const getRequiredChecklistForms = () => {
-    return requestForms.filter((form) => form.RequirementType === "REQUIRED");
-  };
-
-  const getConditionalChecklistForms = () => {
-    return requestForms.filter((form) =>
-      ["CONDITIONAL", "OPTIONAL"].includes(form.RequirementType),
-    );
-  };
-
   const getRequestProgress = () => {
     const requiredForms = getRequiredForms();
     const totalRequired = requiredForms.length;
@@ -235,6 +199,83 @@ const RequestDetails = () => {
     );
   }
 
+  const roleName = user?.Role?.RoleName;
+
+  const isCROUser = ["Admin", "Records Head", "Records Officer"].includes(
+    roleName,
+  );
+
+  const getAvailableActions = () => {
+    if (!request) return [];
+
+    if (request.Status === "DRAFT") {
+      return [
+        {
+          label: "Submit Request",
+          status: "SUBMITTED",
+          type: "submit",
+          allowed: true,
+        },
+      ];
+    }
+
+    if (!isCROUser) return [];
+
+    if (request.Status === "SUBMITTED") {
+      return [
+        { label: "Receive Request", status: "RECEIVED" },
+        { label: "Reject", status: "REJECTED" },
+      ];
+    }
+
+    if (request.Status === "RECEIVED") {
+      return [
+        { label: "Start Review", status: "UNDER_REVIEW" },
+        { label: "Reject", status: "REJECTED" },
+      ];
+    }
+
+    if (request.Status === "UNDER_REVIEW") {
+      return [
+        { label: "For Compliance", status: "FOR_COMPLIANCE" },
+        { label: "Approve", status: "APPROVED" },
+        { label: "Reject", status: "REJECTED" },
+      ];
+    }
+
+    if (request.Status === "APPROVED") {
+      return [{ label: "Complete Request", status: "COMPLETED" }];
+    }
+
+    return [];
+  };
+
+  const handleActionStatus = async (nextStatus) => {
+    const confirmed = window.confirm(`Proceed with action: ${nextStatus}?`);
+
+    if (!confirmed) return;
+
+    try {
+      setUpdating(true);
+      setError("");
+      setSuccess("");
+
+      await axiosClient.patch(`/requests/${id}/status`, {
+        Status: nextStatus,
+        ChangedBy: user?.UserID,
+        Remarks: remarks,
+      });
+
+      setSuccess(`Request updated to ${nextStatus}.`);
+      setRemarks("");
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update request.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <div>
       <button onClick={() => navigate("/requests")} style={styles.backBtn}>
@@ -261,10 +302,7 @@ const RequestDetails = () => {
 
         <div style={styles.card}>
           <h2>Agency Information</h2>
-          <Info
-            label="Agency Name"
-            value={request.AgencyForm?.AgencyName || "-"}
-          />
+          <Info label="Department" value={request.Department?.DepartmentName} />
           <Info
             label="Agency Address"
             value={request.AgencyForm?.AgencyAddress || "-"}
@@ -281,7 +319,7 @@ const RequestDetails = () => {
           <Info label="Email" value={request.requester?.Email || "-"} />
           <Info label="Role" value={request.requester?.Role?.RoleName || "-"} />
         </div>
-
+        {/*
         <div style={styles.card}>
           <h2>Update Status</h2>
 
@@ -337,6 +375,67 @@ const RequestDetails = () => {
             )}
           </form>
         </div>
+        */}
+
+        <div style={styles.card}>
+          <h2>Request Actions</h2>
+
+          <label>Remarks</label>
+          <textarea
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            style={styles.textarea}
+            placeholder="Optional remarks for this action..."
+          />
+
+          <div style={styles.actions}>
+            {getAvailableActions().length === 0 ? (
+              <p style={styles.muted}>
+                No available actions for your role/status.
+              </p>
+            ) : (
+              getAvailableActions().map((action) => {
+                if (action.type === "submit") {
+                  return (
+                    <button
+                      key={action.status}
+                      type="button"
+                      onClick={handleSubmitRequest}
+                      disabled={
+                        submittingRequest || !areRequiredFormsCompleted()
+                      }
+                      style={{
+                        ...styles.submitButton,
+                        ...(submittingRequest || !areRequiredFormsCompleted()
+                          ? styles.disabledButton
+                          : {}),
+                      }}
+                      title={
+                        areRequiredFormsCompleted()
+                          ? "Submit request"
+                          : getRequiredFormsMessage()
+                      }
+                    >
+                      {submittingRequest ? "Submitting..." : action.label}
+                    </button>
+                  );
+                }
+
+                return (
+                  <button
+                    key={action.status}
+                    type="button"
+                    onClick={() => handleActionStatus(action.status)}
+                    disabled={updating}
+                    style={styles.button}
+                  >
+                    {updating ? "Processing..." : action.label}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
 
       <div style={styles.card}>
@@ -389,77 +488,48 @@ const RequestDetails = () => {
 
         {requestForms.length > 0 && (
           <div style={styles.card}>
-            <h2>Forms Dashboard</h2>
+            <h2>Request Completion Progress</h2>
 
-            <h3>Required Forms</h3>
+            {(() => {
+              const progress = getRequestProgress();
 
-            <div style={styles.checklistGrid}>
-              {getRequiredChecklistForms().map((form) => {
-                const status = getFormChecklistStatus(form);
-
-                return (
-                  <div
-                    key={form.RequestFormID}
-                    style={{
-                      ...styles.checklistItem,
-                      ...status.style,
-                    }}
-                    onClick={() =>
-                      navigate(`/request-forms/${form.RequestFormID}`)
-                    }
-                  >
-                    <div style={styles.checklistSymbol}>{status.symbol}</div>
-
-                    <div>
-                      <strong>{form.RequestFormType?.FormCode}</strong>
-                      <p style={styles.checklistName}>
-                        {form.RequestFormType?.FormName}
-                      </p>
-                      <small>{status.label}</small>
-                    </div>
+              return (
+                <>
+                  <div style={styles.progressSummaryGrid}>
+                    <SummaryCard
+                      title="Required Forms"
+                      value={progress.totalRequired}
+                    />
+                    <SummaryCard
+                      title="Completed"
+                      value={progress.completedForms}
+                    />
+                    <SummaryCard
+                      title="Remaining"
+                      value={progress.remainingForms}
+                    />
+                    <SummaryCard
+                      title="Progress"
+                      value={`${progress.percentage}%`}
+                    />
                   </div>
-                );
-              })}
-            </div>
 
-            <h3 style={styles.sectionSubheading}>
-              Conditional / Optional Forms
-            </h3>
-
-            {getConditionalChecklistForms().length === 0 ? (
-              <p style={styles.muted}>
-                No conditional or optional forms attached.
-              </p>
-            ) : (
-              <div style={styles.checklistGrid}>
-                {getConditionalChecklistForms().map((form) => {
-                  const status = getFormChecklistStatus(form);
-
-                  return (
+                  <div style={styles.progressBar}>
                     <div
-                      key={form.RequestFormID}
                       style={{
-                        ...styles.checklistItem,
-                        ...status.style,
+                        ...styles.progressFill,
+                        width: `${progress.percentage}%`,
                       }}
-                      onClick={() =>
-                        navigate(`/request-forms/${form.RequestFormID}`)
-                      }
-                    >
-                      <div style={styles.checklistSymbol}>{status.symbol}</div>
+                    />
+                  </div>
 
-                      <div>
-                        <strong>{form.RequestFormType?.FormCode}</strong>
-                        <p style={styles.checklistName}>
-                          {form.RequestFormType?.FormName}
-                        </p>
-                        <small>{status.label}</small>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                  <p style={styles.muted}>
+                    {progress.completedForms} of {progress.totalRequired}{" "}
+                    required forms completed.
+                  </p>
+                </>
+              );
+            })()}
           </div>
         )}
 
@@ -546,6 +616,36 @@ const Info = ({ label, value }) => (
   <p style={styles.info}>
     <strong>{label}:</strong> {value}
   </p>
+);
+
+const SummaryCard = ({ title, value }) => (
+  <div
+    style={{
+      background: "#f9fafb",
+      padding: "16px",
+      borderRadius: "12px",
+      border: "1px solid #e5e7eb",
+      textAlign: "center",
+    }}
+  >
+    <p
+      style={{
+        margin: 0,
+        color: "#6b7280",
+        fontSize: "13px",
+      }}
+    >
+      {title}
+    </p>
+
+    <h2
+      style={{
+        margin: "8px 0 0",
+      }}
+    >
+      {value}
+    </h2>
+  </div>
 );
 
 const styles = {
@@ -747,6 +847,33 @@ const styles = {
     borderRadius: "12px",
     border: "1px solid #e5e7eb",
     cursor: "pointer",
+  },
+
+  progressSummaryGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "12px",
+    marginBottom: "16px",
+  },
+
+  progressBar: {
+    width: "100%",
+    height: "14px",
+    background: "#e5e7eb",
+    borderRadius: "999px",
+    overflow: "hidden",
+    marginBottom: "8px",
+  },
+
+  progressFill: {
+    height: "100%",
+    background: "#16a34a",
+    transition: "width 0.3s ease",
+  },
+
+  muted: {
+    color: "#6b7280",
+    fontSize: "14px",
   },
 };
 

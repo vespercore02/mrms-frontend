@@ -28,20 +28,12 @@ export const sidebarLinks = [
   {
     path: "/series",
     label: "Series",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
   {
     path: "/specifics",
     label: "Specifics",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
 
   // Admin setup pages
@@ -60,50 +52,31 @@ export const sidebarLinks = [
   {
     path: "/audit-logs",
     label: "Audit Logs",
-    roles: [
-      "Admin",
-      "Records Head",
-    ],
+    roles: ["Admin", "Records Head"],
   },
 
   {
     path: "/agency-forms",
     label: "Office Profiles",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
 
   // Cabinet module
   {
     path: "/cabinets",
     label: "Cabinets",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
 
   {
     path: "/floor-map",
     label: "Floor Map",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
 
   {
     path: "/record-locations",
     label: "Record Locations",
-    roles: [
-      "Admin",
-      "Records Head",
-      "Records Officer",
-    ],
+    roles: ["Admin", "Records Head", "Records Officer"],
   },
 ];
