@@ -64,7 +64,6 @@ const RequestDetails = () => {
     fetchRequestForms();
   }, [id, refreshKey]);
 
-
   const handleSubmitRequest = async () => {
     const confirmed = window.confirm(
       "Submit this draft request? Make sure Annex A is completed before submitting.",
@@ -185,43 +184,120 @@ const RequestDetails = () => {
   const getAvailableActions = () => {
     if (!request) return [];
 
-    if (request.Status === "DRAFT") {
+    const roleName = user?.Role?.RoleName;
+
+    const isCROUser = ["Admin", "Records Head", "Records Officer"].includes(
+      roleName,
+    );
+
+    const isDepartmentHead = roleName === "Department Head";
+
+    const isDepartmentCustodian = roleName === "Department Custodian";
+
+    if (request.Status === "DRAFT" && isDepartmentCustodian) {
       return [
         {
           label: "Submit Request",
           status: "SUBMITTED",
           type: "submit",
-          allowed: true,
         },
       ];
     }
 
-    if (!isCROUser) return [];
-
-    if (request.Status === "SUBMITTED") {
+    if (request.Status === "SUBMITTED" && isDepartmentHead) {
       return [
-        { label: "Receive Request", status: "RECEIVED" },
-        { label: "Reject", status: "REJECTED" },
+        {
+          label: "Approve to CRO",
+          status: "DEPARTMENT_APPROVED",
+        },
+        {
+          label: "Return for Compliance",
+          status: "FOR_COMPLIANCE",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
       ];
     }
 
-    if (request.Status === "RECEIVED") {
+    if (request.Status === "DEPARTMENT_APPROVED" && isCROUser) {
       return [
-        { label: "Start Review", status: "UNDER_REVIEW" },
-        { label: "Reject", status: "REJECTED" },
+        {
+          label: "Receive Request",
+          status: "RECEIVED",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
       ];
     }
 
-    if (request.Status === "UNDER_REVIEW") {
+    if (request.Status === "RECEIVED" && isCROUser) {
       return [
-        { label: "For Compliance", status: "FOR_COMPLIANCE" },
-        { label: "Approve", status: "APPROVED" },
-        { label: "Reject", status: "REJECTED" },
+        {
+          label: "Start Review",
+          status: "UNDER_REVIEW",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
       ];
     }
 
-    if (request.Status === "APPROVED") {
-      return [{ label: "Complete Request", status: "COMPLETED" }];
+    if (request.Status === "UNDER_REVIEW" && isCROUser) {
+      return [
+        {
+          label: "For Compliance",
+          status: "FOR_COMPLIANCE",
+        },
+        {
+          label: "Approve",
+          status: "APPROVED",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
+      ];
+    }
+
+    if (request.Status === "APPROVED" && isCROUser) {
+      return [
+        {
+          label: "Authorize Transmittal",
+          status: "FOR_TRANSMITTAL",
+        },
+      ];
+    }
+
+    if (request.Status === "FOR_TRANSMITTAL" && isCROUser) {
+      return [
+        {
+          label: "Receive Records for Storage",
+          status: "RECEIVED_FOR_STORAGE",
+        },
+      ];
+    }
+
+    if (request.Status === "RECEIVED_FOR_STORAGE" && isCROUser) {
+      return [
+        {
+          label: "Assign Storage Location",
+          status: "STORAGE_ASSIGNED",
+        },
+      ];
+    }
+
+    if (request.Status === "STORAGE_ASSIGNED" && isCROUser) {
+      return [
+        {
+          label: "Complete Request",
+          status: "COMPLETED",
+        },
+      ];
     }
 
     return [];
