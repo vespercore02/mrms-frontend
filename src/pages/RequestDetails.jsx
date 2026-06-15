@@ -176,12 +176,6 @@ const RequestDetails = () => {
     );
   }
 
-  const roleName = user?.Role?.RoleName;
-
-  const isCROUser = ["Admin", "Records Head", "Records Officer"].includes(
-    roleName,
-  );
-
   const getAvailableActions = () => {
     if (!request) return [];
 
@@ -257,6 +251,74 @@ const RequestDetails = () => {
         {
           label: "Approve",
           status: "APPROVED",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
+      ];
+    }
+
+    if (
+      request.Status === "FOR_CRH_APPROVAL" && isCROUser ) {
+      return [
+        {
+          label: "Approve",
+          status: "APPROVED",
+        },
+        {
+          label: "For Compliance",
+          status: "FOR_COMPLIANCE",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
+      ];
+    }
+
+    if (
+      request.Status === "FOR_COMPLIANCE" &&
+      ["Department Custodian", "Department Head"].includes(roleName)
+    ) {
+      return [
+        {
+          label: "Resubmit Compliance",
+          status: "RESUBMITTED",
+        },
+      ];
+    }
+
+    if (request.Status === "RESUBMITTED" && roleName === "Department Head") {
+      return [
+        {
+          label: "Approve to CRO",
+          status: "DEPARTMENT_APPROVED",
+        },
+        {
+          label: "Return for Compliance",
+          status: "FOR_COMPLIANCE",
+        },
+        {
+          label: "Reject",
+          status: "REJECTED",
+        },
+      ];
+    }
+
+    if (request.Status === "RESUBMITTED" && isCROUser) {
+      return [
+        {
+          label: "Continue Review",
+          status: "UNDER_REVIEW",
+        },
+        {
+          label: "Approve",
+          status: "APPROVED",
+        },
+        {
+          label: "For Compliance",
+          status: "FOR_COMPLIANCE",
         },
         {
           label: "Reject",
@@ -346,7 +408,17 @@ const RequestDetails = () => {
           <h2>Request Information</h2>
           <Info label="Request Code" value={request.RequestCode} />
           <Info label="Request Type" value={request.RequestType} />
-          <Info label="Status" value={request.Status} />
+          <p style={styles.info}>
+            <strong>Status:</strong>{" "}
+            <span
+              style={{
+                ...styles.statusBadge,
+                ...getRequestStatusStyle(request.Status),
+              }}
+            >
+              {request.Status}
+            </span>
+          </p>
           <Info label="Remarks" value={request.Remarks || "-"} />
           <Info
             label="Created"
@@ -928,6 +1000,12 @@ const styles = {
   muted: {
     color: "#6b7280",
     fontSize: "14px",
+  },
+  statusBadge: {
+    padding: "4px 10px",
+    borderRadius: "999px",
+    fontSize: "12px",
+    fontWeight: "bold",
   },
 };
 

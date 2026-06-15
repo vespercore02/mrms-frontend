@@ -32,6 +32,10 @@ export const getRequestStatusStyle = (status) => {
       background: "#dcfce7",
       color: "#166534",
     },
+    FOR_CRH_APPROVAL: {
+      background: "#fce7f3",
+      color: "#9d174d",
+    },
     FOR_TRANSMITTAL: {
       background: "#e0e7ff",
       color: "#3730a3",
@@ -64,4 +68,14 @@ export const getRequestStatusStyle = (status) => {
       color: "#374151",
     }
   );
+};
+
+export const formatRequestStatus = (status) => {
+  if (!status) return "-";
+
+  return status
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };

@@ -96,6 +96,7 @@ const Requests = () => {
           <option value="RECEIVED">Received</option>
           <option value="UNDER_REVIEW">Under Review</option>
           <option value="FOR_COMPLIANCE">For Compliance</option>
+          <option value="FOR_CRH_APPROVAL">For CRH Approval</option>
           <option value="APPROVED">Approved</option>
           <option value="COMPLETED">Completed</option>
           <option value="ARCHIVED">Archived</option>
@@ -119,7 +120,7 @@ const Requests = () => {
                 <tr>
                   <th style={styles.th}>Code</th>
                   <th style={styles.th}>Type</th>
-                  <th style={styles.th}>Agency</th>
+                  <th style={styles.th}>Department</th>
                   <th style={styles.th}>Requested By</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Created</th>
@@ -145,7 +146,7 @@ const Requests = () => {
                       <td style={styles.td}>{request.RequestType}</td>
 
                       <td style={styles.td}>
-                        {request.AgencyForm?.AgencyName || "-"}
+                        {request.Department?.DepartmentName || "-"}
                       </td>
 
                       <td style={styles.td}>
@@ -159,7 +160,7 @@ const Requests = () => {
                             ...getRequestStatusStyle(request.Status),
                           }}
                         >
-                          {request.Status}
+                          {formatRequestStatus(request.Status)}
                         </span>
                       </td>
 
