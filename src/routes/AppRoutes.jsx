@@ -47,7 +47,6 @@ const AppRoutes = () => {
         <Route path="/users" element={withLayout(<Users />)} />
         <Route path="/audit-logs" element={withLayout(<AuditLogs />)} />
 
-        <Route path="/requests/create" element={withLayout(<CreateRequest />)} />
         <Route path="/agency-forms" element={withLayout(<AgencyForms />)} />
 
         <Route path="/cabinets" element={withLayout(<Cabinets />)} />
@@ -58,7 +57,9 @@ const AppRoutes = () => {
         <Route path="/floor-map" element={withLayout(<FloorMap />)} />
         
         <Route path="/requests" element={withLayout(<Requests />)} />
-        <Route path="/requests/create-v2" element={withLayout(<CreateRequestV2 />)} />
+        
+        <Route path="/requests/create" element={withLayout(<CreateRequestV2 />)} />
+        <Route path="/requests/create-v2" element={<Navigate to="/requests/create" replace />} />
 
         <Route path="/requests/:id" element={withLayout(<RequestDetails />)} />
         <Route path="/request-forms/:id" element={withLayout(<RequestFormDetails />)} />

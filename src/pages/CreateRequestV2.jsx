@@ -72,7 +72,6 @@ const CreateRequestV2 = () => {
         const result = response.data.data;
 
         console.log(result);
-        
 
         const departmentList = Array.isArray(result)
           ? result
@@ -179,8 +178,8 @@ const CreateRequestV2 = () => {
   }
 
   return (
-    <div>
-      <h1>Create Request v2</h1>
+    <div style={styles.page}>
+      <h1>Create Request</h1>
 
       {error && <div style={styles.error}>{error}</div>}
       {success && <div style={styles.success}>{success}</div>}
@@ -367,6 +366,11 @@ const styles = {
     background: "#dcfce7",
     color: "#166534",
     marginBottom: "16px",
+  },
+
+  page: {
+    maxWidth: "820px",
+    margin: "0 auto",
   },
 };
 

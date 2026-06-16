@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosClient from "../api/axiosClient";
 import { getUser } from "../utils/auth";
-import { getRequestStatusStyle } from "../utils/statusColors";
+import {
+  getRequestStatusStyle,
+  formatRequestStatus,
+} from "../utils/statusColors";
 
 const RequestDetails = () => {
   const { id } = useParams();
@@ -163,6 +166,42 @@ const RequestDetails = () => {
     };
   };
 
+  const getFormChecklistStatus = (form) => {
+    if (["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status)) {
+      return {
+        label: "Completed",
+        symbol: "✓",
+        style: styles.completedChecklist,
+      };
+    }
+
+    const hasData = form.FormData && Object.keys(form.FormData).length > 0;
+
+    if (hasData) {
+      return {
+        label: "Draft Saved",
+        symbol: "◐",
+        style: styles.draftChecklist,
+      };
+    }
+
+    return {
+      label: "Not Started",
+      symbol: "○",
+      style: styles.pendingChecklist,
+    };
+  };
+
+  const getRequiredChecklistForms = () => {
+    return requestForms.filter((form) => form.RequirementType === "REQUIRED");
+  };
+
+  const getConditionalChecklistForms = () => {
+    return requestForms.filter((form) =>
+      ["CONDITIONAL", "OPTIONAL"].includes(form.RequirementType),
+    );
+  };
+
   if (loading) return <p>Loading request details...</p>;
 
   if (!request) {
@@ -242,15 +281,18 @@ const RequestDetails = () => {
       ];
     }
 
-    if (request.Status === "UNDER_REVIEW" && isCROUser) {
+    if (
+      request.Status === "UNDER_REVIEW" &&
+      ["Admin", "Records Officer"].includes(roleName)
+    ) {
       return [
+        {
+          label: "Submit to CRH",
+          status: "FOR_CRH_APPROVAL",
+        },
         {
           label: "For Compliance",
           status: "FOR_COMPLIANCE",
-        },
-        {
-          label: "Approve",
-          status: "APPROVED",
         },
         {
           label: "Reject",
@@ -260,7 +302,9 @@ const RequestDetails = () => {
     }
 
     if (
-      request.Status === "FOR_CRH_APPROVAL" && isCROUser ) {
+      request.Status === "FOR_CRH_APPROVAL" &&
+      ["Admin", "Records Head"].includes(roleName)
+    ) {
       return [
         {
           label: "Approve",
@@ -393,7 +437,7 @@ const RequestDetails = () => {
   };
 
   return (
-    <div>
+    <div style={styles.page}>
       <button onClick={() => navigate("/requests")} style={styles.backBtn}>
         ← Back to Requests
       </button>
@@ -403,336 +447,392 @@ const RequestDetails = () => {
       {error && <div style={styles.error}>{error}</div>}
       {success && <div style={styles.success}>{success}</div>}
 
-      <div style={styles.grid}>
-        <div style={styles.card}>
-          <h2>Request Information</h2>
-          <Info label="Request Code" value={request.RequestCode} />
-          <Info label="Request Type" value={request.RequestType} />
-          <p style={styles.info}>
-            <strong>Status:</strong>{" "}
-            <span
-              style={{
-                ...styles.statusBadge,
-                ...getRequestStatusStyle(request.Status),
-              }}
-            >
-              {request.Status}
-            </span>
-          </p>
-          <Info label="Remarks" value={request.Remarks || "-"} />
-          <Info
-            label="Created"
-            value={new Date(request.createdAt).toLocaleString()}
-          />
-        </div>
+      <div style={styles.detailsLayout}>
+        <div style={styles.leftColumn}>
+          <div style={styles.card}>
+            <h2>Request Information</h2>
 
-        <div style={styles.card}>
-          <h2>Agency Information</h2>
-          <Info label="Department" value={request.Department?.DepartmentName} />
-          <Info
-            label="Agency Address"
-            value={request.AgencyForm?.AgencyAddress || "-"}
-          />
-          <Info
-            label="Agency Contact"
-            value={request.AgencyForm?.AgencyContact || "-"}
-          />
-        </div>
+            <div style={styles.priorityInfo}>
+              <Info label="Request Code" value={request.RequestCode} />
 
-        <div style={styles.card}>
-          <h2>Requester</h2>
-          <Info label="Name" value={request.requester?.FullName || "-"} />
-          <Info label="Email" value={request.requester?.Email || "-"} />
-          <Info label="Role" value={request.requester?.Role?.RoleName || "-"} />
-        </div>
-        {/*
-        <div style={styles.card}>
-          <h2>Update Status</h2>
+              <Info
+                label="Request Type"
+                value={
+                  request.RequestTypeInfo?.RequestTypeName ||
+                  request.RequestType ||
+                  "-"
+                }
+              />
 
-          <form onSubmit={handleUpdateStatus}>
-            <label>Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              style={styles.input}
-            >
-              <option value="DRAFT">Draft</option>
-              <option value="SUBMITTED">Submitted</option>
-              <option value="RECEIVED">Received</option>
-              <option value="UNDER_REVIEW">Under Review</option>
-              <option value="FOR_COMPLIANCE">For Compliance</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
+              <p style={styles.info}>
+                <strong>Status:</strong>{" "}
+                <span
+                  style={{
+                    ...styles.statusBadge,
+                    ...getRequestStatusStyle(request.Status),
+                  }}
+                >
+                  {formatRequestStatus(request.Status)}
+                </span>
+              </p>
+            </div>
+
+            <hr style={styles.divider} />
+
+            <div style={styles.formGrid}>
+              <Info
+                label="Requested By"
+                value={request.requester?.FullName || "-"}
+              />
+              <Info label="Email" value={request.requester?.Email || "-"} />
+              <Info
+                label="Department"
+                value={request.Department?.DepartmentName || "-"}
+              />
+              <Info
+                label="Role"
+                value={request.requester?.Role?.RoleName || "-"}
+              />
+              <Info
+                label="Created"
+                value={new Date(request.createdAt).toLocaleString()}
+              />
+            </div>
+
+            <div style={styles.fullWidthInfo}>
+              <Info label="Remarks" value={request.Remarks || "-"} />
+            </div>
+
+            <hr style={styles.divider} />
+
+            <h3>Request Actions</h3>
 
             <label>Remarks</label>
             <textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
               style={styles.textarea}
-              placeholder="Add remarks..."
+              placeholder="Optional remarks for this action..."
             />
 
-            <button type="submit" disabled={updating} style={styles.button}>
-              {updating ? "Updating..." : "Update Status"}
-            </button>
+            <div style={styles.actions}>
+              {getAvailableActions().length === 0 ? (
+                <p style={styles.muted}>
+                  No available actions for your role/status.
+                </p>
+              ) : (
+                getAvailableActions().map((action) => {
+                  if (action.type === "submit") {
+                    return (
+                      <button
+                        key={action.status}
+                        type="button"
+                        onClick={handleSubmitRequest}
+                        disabled={
+                          submittingRequest || !areRequiredFormsCompleted()
+                        }
+                        style={{
+                          ...styles.submitButton,
+                          ...(submittingRequest || !areRequiredFormsCompleted()
+                            ? styles.disabledButton
+                            : {}),
+                        }}
+                        title={
+                          areRequiredFormsCompleted()
+                            ? "Submit request"
+                            : getRequiredFormsMessage()
+                        }
+                      >
+                        {submittingRequest ? "Submitting..." : action.label}
+                      </button>
+                    );
+                  }
 
-            {request?.Status === "DRAFT" && (
-              <button
-                type="button"
-                onClick={handleSubmitRequest}
-                disabled={submittingRequest || !areRequiredFormsCompleted()}
-                style={{
-                  ...styles.submitButton,
-                  ...(submittingRequest || !areRequiredFormsCompleted()
-                    ? styles.disabledButton
-                    : {}),
-                }}
-                title={
-                  areRequiredFormsCompleted()
-                    ? "Submit request"
-                    : getRequiredFormsMessage()
-                }
-              >
-                {submittingRequest ? "Submitting..." : "Submit Request"}
-              </button>
-            )}
-          </form>
-        </div>
-        */}
-
-        <div style={styles.card}>
-          <h2>Request Actions</h2>
-
-          <label>Remarks</label>
-          <textarea
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            style={styles.textarea}
-            placeholder="Optional remarks for this action..."
-          />
-
-          <div style={styles.actions}>
-            {getAvailableActions().length === 0 ? (
-              <p style={styles.muted}>
-                No available actions for your role/status.
-              </p>
-            ) : (
-              getAvailableActions().map((action) => {
-                if (action.type === "submit") {
                   return (
                     <button
                       key={action.status}
                       type="button"
-                      onClick={handleSubmitRequest}
-                      disabled={
-                        submittingRequest || !areRequiredFormsCompleted()
-                      }
-                      style={{
-                        ...styles.submitButton,
-                        ...(submittingRequest || !areRequiredFormsCompleted()
-                          ? styles.disabledButton
-                          : {}),
-                      }}
-                      title={
-                        areRequiredFormsCompleted()
-                          ? "Submit request"
-                          : getRequiredFormsMessage()
-                      }
+                      onClick={() => handleActionStatus(action.status)}
+                      disabled={updating}
+                      style={styles.button}
                     >
-                      {submittingRequest ? "Submitting..." : action.label}
+                      {updating ? "Processing..." : action.label}
                     </button>
                   );
-                }
+                })
+              )}
+            </div>
+          </div>
+
+          {requestForms.length > 0 && (
+            <div style={styles.card}>
+              <h2>Request Completion Progress</h2>
+
+              {(() => {
+                const progress = getRequestProgress();
 
                 return (
-                  <button
-                    key={action.status}
-                    type="button"
-                    onClick={() => handleActionStatus(action.status)}
-                    disabled={updating}
-                    style={styles.button}
-                  >
-                    {updating ? "Processing..." : action.label}
-                  </button>
+                  <>
+                    <div style={styles.progressSummaryGrid}>
+                      <SummaryCard
+                        title="Required Forms"
+                        value={progress.totalRequired}
+                      />
+                      <SummaryCard
+                        title="Completed"
+                        value={progress.completedForms}
+                      />
+                      <SummaryCard
+                        title="Remaining"
+                        value={progress.remainingForms}
+                      />
+                      <SummaryCard
+                        title="Progress"
+                        value={`${progress.percentage}%`}
+                      />
+                    </div>
+
+                    <div style={styles.progressBar}>
+                      <div
+                        style={{
+                          ...styles.progressFill,
+                          width: `${progress.percentage}%`,
+                        }}
+                      />
+                    </div>
+
+                    <p style={styles.muted}>
+                      {progress.completedForms} of {progress.totalRequired}{" "}
+                      required forms completed.
+                    </p>
+                  </>
                 );
-              })
-            )}
-          </div>
-        </div>
-      </div>
+              })()}
+            </div>
+          )}
 
-      <div style={styles.card}>
-        <h2>Status History</h2>
+          {/* Forms Dashboard card here */}
+          {requestForms.length > 0 && (
+            <div style={styles.card}>
+              <h2>Forms Dashboard</h2>
 
-        {request.RequestStatusHistories?.length === 0 ? (
-          <p>No status history.</p>
-        ) : (
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Old Status</th>
-                <th style={styles.th}>New Status</th>
-                <th style={styles.th}>Remarks</th>
-                <th style={styles.th}>Date</th>
-              </tr>
-            </thead>
+              <h3>Required Forms</h3>
 
-            <tbody>
-              {request.RequestStatusHistories?.map((history) => (
-                <tr key={history.HistoryID}>
-                  <td style={styles.td}>{history.OldStatus || "-"}</td>
-                  <td style={styles.td}>{history.NewStatus}</td>
-                  <td style={styles.td}>{history.Remarks || "-"}</td>
-                  <td style={styles.td}>
-                    {new Date(history.createdAt).toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              <div style={styles.checklistGrid}>
+                {getRequiredChecklistForms().map((form) => {
+                  const status = getFormChecklistStatus(form);
 
-      <div style={styles.card}>
-        <h2>Request Forms</h2>
-
-        {request?.Status === "DRAFT" && (
-          <div
-            style={{
-              ...styles.infoBox,
-              ...(areRequiredFormsCompleted()
-                ? styles.readyBox
-                : styles.warningBox),
-            }}
-          >
-            {getRequiredFormsMessage()}
-          </div>
-        )}
-
-        {requestForms.length > 0 && (
-          <div style={styles.card}>
-            <h2>Request Completion Progress</h2>
-
-            {(() => {
-              const progress = getRequestProgress();
-
-              return (
-                <>
-                  <div style={styles.progressSummaryGrid}>
-                    <SummaryCard
-                      title="Required Forms"
-                      value={progress.totalRequired}
-                    />
-                    <SummaryCard
-                      title="Completed"
-                      value={progress.completedForms}
-                    />
-                    <SummaryCard
-                      title="Remaining"
-                      value={progress.remainingForms}
-                    />
-                    <SummaryCard
-                      title="Progress"
-                      value={`${progress.percentage}%`}
-                    />
-                  </div>
-
-                  <div style={styles.progressBar}>
+                  return (
                     <div
+                      key={form.RequestFormID}
                       style={{
-                        ...styles.progressFill,
-                        width: `${progress.percentage}%`,
+                        ...styles.checklistItem,
+                        ...status.style,
                       }}
-                    />
-                  </div>
+                      onClick={() =>
+                        navigate(`/request-forms/${form.RequestFormID}`)
+                      }
+                    >
+                      <div style={styles.checklistSymbol}>{status.symbol}</div>
 
-                  <p style={styles.muted}>
-                    {progress.completedForms} of {progress.totalRequired}{" "}
-                    required forms completed.
-                  </p>
-                </>
-              );
-            })()}
-          </div>
-        )}
+                      <div>
+                        <strong>{form.RequestFormType?.FormCode}</strong>
+                        <p style={styles.checklistName}>
+                          {form.RequestFormType?.FormName}
+                        </p>
+                        <small>{status.label}</small>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
-        {loadingForms ? (
-          <p>Loading request forms...</p>
-        ) : requestForms.length === 0 ? (
-          <p>No forms created for this request yet.</p>
-        ) : (
-          <div style={styles.tableWrap}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Form Code</th>
-                  <th style={styles.th}>Form Name</th>
-                  <th style={styles.th}>Requirement</th>
-                  <th style={styles.th}>Category</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Completion</th>
-                  <th style={styles.th}>Remarks</th>
-                  <th style={styles.th}>Action</th>
-                </tr>
-              </thead>
+              <h3 style={styles.sectionSubheading}>
+                Conditional / Optional Forms
+              </h3>
 
-              <tbody>
-                {requestForms.map((form) => (
-                  <tr key={form.RequestFormID}>
-                    <td style={styles.td}>
-                      <strong>{form.RequestFormType?.FormCode || "-"}</strong>
-                    </td>
-                    <td style={styles.td}>
-                      {form.RequestFormType?.FormName || "-"}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={styles.badge}>
-                        {form.RequirementType || "OPTIONAL"}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      {form.RequestFormType?.FormCategory || "-"}
-                    </td>
-                    <td style={styles.td}>
-                      <span style={styles.badge}>{form.Status}</span>
-                    </td>
-                    <td style={styles.td}>
-                      {(() => {
-                        const label = getFormCompletion(form);
+              {getConditionalChecklistForms().length === 0 ? (
+                <p style={styles.muted}>
+                  No conditional or optional forms attached.
+                </p>
+              ) : (
+                <div style={styles.checklistGrid}>
+                  {getConditionalChecklistForms().map((form) => {
+                    const status = getFormChecklistStatus(form);
 
-                        return (
-                          <span
-                            style={{
-                              ...styles.badge,
-                              ...getCompletionStyle(label),
-                            }}
-                          >
-                            {label}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td style={styles.td}>{form.Remarks || "-"}</td>
-                    <td style={styles.td}>
-                      <button
-                        type="button"
-                        style={styles.smallButton}
+                    return (
+                      <div
+                        key={form.RequestFormID}
+                        style={{
+                          ...styles.checklistItem,
+                          ...status.style,
+                        }}
                         onClick={() =>
                           navigate(`/request-forms/${form.RequestFormID}`)
                         }
                       >
-                        Open Form
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        <div style={styles.checklistSymbol}>
+                          {status.symbol}
+                        </div>
+
+                        <div>
+                          <strong>{form.RequestFormType?.FormCode}</strong>
+                          <p style={styles.checklistName}>
+                            {form.RequestFormType?.FormName}
+                          </p>
+                          <small>{status.label}</small>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Request Forms table card here */}
+          <div style={styles.card}>
+            <h2>Request Forms</h2>
+
+            {request?.Status === "DRAFT" && (
+              <div
+                style={{
+                  ...styles.infoBox,
+                  ...(areRequiredFormsCompleted()
+                    ? styles.readyBox
+                    : styles.warningBox),
+                }}
+              >
+                {getRequiredFormsMessage()}
+              </div>
+            )}
+
+            {loadingForms ? (
+              <p>Loading request forms...</p>
+            ) : requestForms.length === 0 ? (
+              <p>No forms created for this request yet.</p>
+            ) : (
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Form Code</th>
+                      <th style={styles.th}>Form Name</th>
+                      <th style={styles.th}>Requirement</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Completion</th>
+                      <th style={styles.th}>Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {requestForms.map((form) => {
+                      const label = getFormCompletion(form);
+
+                      return (
+                        <tr key={form.RequestFormID}>
+                          <td style={styles.td}>
+                            <strong>
+                              {form.RequestFormType?.FormCode || "-"}
+                            </strong>
+                          </td>
+
+                          <td style={styles.td}>
+                            {form.RequestFormType?.FormName || "-"}
+                          </td>
+
+                          <td style={styles.td}>
+                            <span style={styles.badge}>
+                              {form.RequirementType || "OPTIONAL"}
+                            </span>
+                          </td>
+
+                          <td style={styles.td}>
+                            <span style={styles.badge}>
+                              {formatRequestStatus(form.Status)}
+                            </span>
+                          </td>
+
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                ...styles.badge,
+                                ...getCompletionStyle(label),
+                              }}
+                            >
+                              {label}
+                            </span>
+                          </td>
+
+                          <td style={styles.td}>
+                            <button
+                              type="button"
+                              style={styles.smallButton}
+                              onClick={() =>
+                                navigate(`/request-forms/${form.RequestFormID}`)
+                              }
+                            >
+                              Open Form
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        <div style={styles.rightColumn}>
+          <div style={styles.card}>
+            <h2>Status History</h2>
+
+            {request.RequestStatusHistories?.length === 0 ? (
+              <p>No status history.</p>
+            ) : (
+              <div style={styles.timeline}>
+                {request.RequestStatusHistories?.map((history, index) => (
+                  <div key={history.HistoryID} style={styles.timelineItem}>
+                    <div style={styles.timelineLeft}>
+                      <div style={styles.timelineDot} />
+
+                      {index !== request.RequestStatusHistories.length - 1 && (
+                        <div style={styles.timelineLine} />
+                      )}
+                    </div>
+
+                    <div style={styles.timelineContent}>
+                      <div
+                        style={{
+                          ...styles.timelineStatusBadge,
+                          ...getRequestStatusStyle(history.NewStatus),
+                        }}
+                      >
+                        {formatRequestStatus(history.NewStatus)}
+                      </div>
+
+                      <div style={styles.timelineMeta}>
+                        {history.User?.FullName || "System"}
+                      </div>
+
+                      <div style={styles.timelineDate}>
+                        {new Date(history.createdAt).toLocaleString()}
+                      </div>
+
+                      {history.Remarks && (
+                        <div style={styles.timelineRemarks}>
+                          {history.Remarks}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -782,12 +882,6 @@ const styles = {
     borderRadius: "8px",
     background: "#fff",
     cursor: "pointer",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "16px",
-    marginBottom: "16px",
   },
   card: {
     background: "#fff",
@@ -1006,6 +1100,121 @@ const styles = {
     borderRadius: "999px",
     fontSize: "12px",
     fontWeight: "bold",
+  },
+
+  page: {
+    maxWidth: "900px",
+    margin: "0 auto",
+  },
+
+  detailsLayout: {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 2fr) minmax(320px, 1fr)",
+    gap: "20px",
+    alignItems: "start",
+  },
+
+  leftColumn: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "16px",
+  },
+
+  rightColumn: {
+    position: "sticky",
+    top: "20px",
+  },
+
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "12px 20px",
+  },
+
+  fullWidthInfo: {
+    marginTop: "12px",
+  },
+
+  divider: {
+    border: "none",
+    borderTop: "1px solid #e5e7eb",
+    margin: "20px 0",
+  },
+
+  timeline: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+
+  timelineItem: {
+    display: "flex",
+    gap: "12px",
+  },
+
+  timelineLeft: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+
+  timelineDot: {
+    width: "12px",
+    height: "12px",
+    borderRadius: "50%",
+    background: "#2563eb",
+    marginTop: "4px",
+  },
+
+  timelineLine: {
+    width: "2px",
+    flex: 1,
+    background: "#d1d5db",
+    marginTop: "4px",
+  },
+
+  timelineContent: {
+    flex: 1,
+    paddingBottom: "16px",
+  },
+
+  timelineStatus: {
+    fontWeight: "bold",
+    fontSize: "14px",
+  },
+
+  timelineMeta: {
+    fontSize: "13px",
+    color: "#6b7280",
+  },
+
+  timelineDate: {
+    fontSize: "12px",
+    color: "#9ca3af",
+  },
+
+  timelineRemarks: {
+    marginTop: "6px",
+    padding: "8px",
+    background: "#f9fafb",
+    borderRadius: "8px",
+    fontSize: "13px",
+  },
+
+  timelineStatusBadge: {
+    display: "inline-block",
+    padding: "4px 10px",
+    borderRadius: "999px",
+    fontWeight: "bold",
+    fontSize: "12px",
+    marginBottom: "6px",
+  },
+  priorityInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: "8px",
+    marginBottom: "12px",
   },
 };
 

@@ -68,14 +68,6 @@ const Requests = () => {
         >
           + Create Request
         </button>
-
-        <button
-          type="button"
-          onClick={() => navigate("/requests/create-v2")}
-          style={styles.button}
-        >
-          Create Request v2
-        </button>
       </div>
 
       <form onSubmit={handleSearch} style={styles.filters}>
