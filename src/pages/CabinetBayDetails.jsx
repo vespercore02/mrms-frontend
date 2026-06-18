@@ -123,6 +123,12 @@ const CabinetBayDetails = () => {
 
     if (!confirmed) return;
 
+    if (
+      !window.confirm("Deactivate this storage box? It will remain in history.")
+    ) {
+      return;
+    }
+
     try {
       setError("");
       setSuccess("");
@@ -178,6 +184,11 @@ const CabinetBayDetails = () => {
     bay.Status === "FULL" ||
     bay.Status === "OVERWEIGHT";
 
+  const occupiedBoxes = boxes.filter((box) => box.Status === "OCCUPIED").length;
+  const availableBoxes = boxes.filter(
+    (box) => box.Status === "AVAILABLE",
+  ).length;
+
   return (
     <div>
       <button onClick={() => navigate(getBackPath())} style={styles.backBtn}>
@@ -195,10 +206,9 @@ const CabinetBayDetails = () => {
         <SummaryCard title="Level" value={bay.LevelNumber} />
         <SummaryCard title="Bay" value={bay.BayNumber} />
         <SummaryCard title="Status" value={bay.Status} />
-        <SummaryCard
-          title="Boxes"
-          value={`${bay.CurrentBoxes}/${bay.MaxBoxes}`}
-        />
+        <SummaryCard title="Boxes" value={`${occupiedBoxes}/${bay.MaxBoxes}`} />
+
+        <SummaryCard title="Available" value={availableBoxes} />
       </div>
 
       <div style={styles.grid}>
@@ -302,54 +312,68 @@ const CabinetBayDetails = () => {
                   <th style={styles.th}>Weight</th>
                   <th style={styles.th}>Status</th>
                   <th style={styles.th}>Remarks</th>
+                  <th style={styles.th}>Request</th>
                   <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
 
               <tbody>
-                {boxes.map((box) => (
-                  <tr key={box.StorageBoxID}>
-                    <td style={styles.td}>
-                      <strong>{box.BoxCode}</strong>
-                    </td>
-                    <td style={styles.td}>
-                      {box.Department?.DepartmentName || "-"}
-                    </td>
-                    <td style={styles.td}>
-                      {Number(box.EstimatedWeightKg).toFixed(2)} kg
-                    </td>
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          ...styles.badge,
-                          ...getStorageBoxStatusStyle(box.Status),
-                        }}
-                      >
-                        {box.Status}
-                      </span>
-                    </td>
-                    <td style={styles.td}>{box.Remarks || "-"}</td>
-                    <td style={styles.td}>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(`/storage-boxes/${box.StorageBoxID}`)
-                        }
-                        style={styles.smallButton}
-                      >
-                        View
-                      </button>
+                {boxes.map((box) => {
+                  const requestRecord = box.BoxRecords?.find(
+                    (record) => record.RequestID,
+                  );
+                  const request = requestRecord?.Request;
 
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteBox(box.StorageBoxID)}
-                        style={styles.deleteButton}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                  return (
+                    <tr key={box.StorageBoxID}>
+                      <td style={styles.td}>
+                        <strong>{box.BoxCode}</strong>
+                      </td>
+                      <td style={styles.td}>
+                        {box.Department?.DepartmentName || "-"}
+                      </td>
+                      <td style={styles.td}>
+                        {Number(box.EstimatedWeightKg).toFixed(2)} kg
+                      </td>
+                      <td style={styles.td}>
+                        <span
+                          style={{
+                            ...styles.badge,
+                            ...getStorageBoxStatusStyle(box.Status),
+                          }}
+                        >
+                          {box.Status}
+                        </span>
+                      </td>
+                      <td style={styles.td}>{box.Remarks || "-"}</td>
+                      <td style={styles.td}>
+                        {request ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              navigate(`/requests/${request.RequestID}`)
+                            }
+                            style={styles.requestLink}
+                          >
+                            <strong>{request.RequestCode}</strong>
+                            <span>{request.RequestType}</span>
+                          </button>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td style={styles.td}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBox(box.StorageBoxID)}
+                          style={styles.deleteButton}
+                        >
+                          Deactivate
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -509,6 +533,25 @@ const styles = {
     fontSize: "12px",
     fontWeight: "bold",
     display: "inline-block",
+  },
+
+  requestLink: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    padding: "6px 10px",
+    border: "none",
+    borderRadius: "10px",
+    background: "#e0e7ff",
+    color: "#3730a3",
+    fontSize: "12px",
+    fontWeight: "bold",
+    cursor: "pointer",
+    textAlign: "left",
+  },
+  INACTIVE: {
+    background: "#e5e7eb",
+    color: "#374151",
   },
 };
 

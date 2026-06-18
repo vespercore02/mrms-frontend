@@ -17,6 +17,18 @@ const RequestDetails = () => {
   const [remarks, setRemarks] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const [cabinets, setCabinets] = useState([]);
+  const [cabinetBays, setCabinetBays] = useState([]);
+  const [storageBoxes, setStorageBoxes] = useState([]);
+
+  const [storageForm, setStorageForm] = useState({
+    CabinetID: "",
+    CabinetBayID: "",
+    StorageBoxID: "",
+  });
+
+  const [assigningStorage, setAssigningStorage] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -64,8 +76,18 @@ const RequestDetails = () => {
       }
     };
 
+    const fetchCabinets = async () => {
+      try {
+        const response = await axiosClient.get("/cabinets");
+        setCabinets(response.data.data || []);
+      } catch (err) {
+        console.error("Failed to load cabinets", err);
+      }
+    };
+
     fetchRequest();
     fetchRequestForms();
+    fetchCabinets();
   }, [id, refreshKey]);
 
   const handleSubmitRequest = async () => {
@@ -436,6 +458,87 @@ const RequestDetails = () => {
     }
   };
 
+  const handleStorageChange = async (e) => {
+    const { name, value } = e.target;
+
+    setStorageForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (name === "CabinetID") {
+      setStorageForm((prev) => ({
+        ...prev,
+        CabinetID: value,
+        CabinetBayID: "",
+        StorageBoxID: "",
+      }));
+
+      try {
+        const response = await axiosClient.get("/cabinet-bays", {
+          params: { CabinetID: value },
+        });
+
+        setCabinetBays(response.data.data || []);
+        setStorageBoxes([]);
+      } catch (err) {
+        console.error("Failed to load cabinet bays", err);
+      }
+    }
+
+    if (name === "CabinetBayID") {
+      setStorageForm((prev) => ({
+        ...prev,
+        CabinetBayID: value,
+        StorageBoxID: "",
+      }));
+
+      try {
+        const response = await axiosClient.get("/storage-boxes/available", {
+          params: {
+            CabinetID: storageForm.CabinetID,
+            CabinetBayID: value,
+          },
+        });
+
+        setStorageBoxes(response.data.data || []);
+      } catch (err) {
+        console.error("Failed to load storage boxes", err);
+      }
+    }
+  };
+
+  const handleAssignStorage = async () => {
+    if (
+      !storageForm.CabinetID ||
+      !storageForm.CabinetBayID ||
+      !storageForm.StorageBoxID
+    ) {
+      setError("Please select cabinet, bay, and storage box.");
+      return;
+    }
+
+    try {
+      setAssigningStorage(true);
+      setError("");
+      setSuccess("");
+
+      await axiosClient.patch(`/requests/${id}/storage-location`, {
+        CabinetID: Number(storageForm.CabinetID),
+        CabinetBayID: Number(storageForm.CabinetBayID),
+        StorageBoxID: Number(storageForm.StorageBoxID),
+        AssignedBy: user?.UserID,
+      });
+
+      setSuccess("Storage location assigned successfully.");
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to assign storage.");
+    } finally {
+      setAssigningStorage(false);
+    }
+  };
+
   return (
     <div style={styles.page}>
       <button onClick={() => navigate("/requests")} style={styles.backBtn}>
@@ -563,6 +666,97 @@ const RequestDetails = () => {
               )}
             </div>
           </div>
+
+          {request.StorageBoxID && (
+            <div style={styles.card}>
+              <h2>Storage Location</h2>
+
+              <div style={styles.formGrid}>
+                <Info
+                  label="Cabinet"
+                  value={request.Cabinet?.CabinetCode || "-"}
+                />
+
+                <Info
+                  label="Cabinet Bay"
+                  value={request.CabinetBay?.BayCode || "-"}
+                />
+
+                <Info
+                  label="Storage Box"
+                  value={request.StorageBox?.BoxCode || "-"}
+                />
+
+                <Info
+                  label="Box Status"
+                  value={request.StorageBox?.Status || "-"}
+                />
+              </div>
+            </div>
+          )}
+
+          
+          {request.Status === "RECEIVED_FOR_STORAGE" && (
+            <div style={styles.card}>
+              <h2>Storage Assignment</h2>
+
+              <label>Cabinet</label>
+              <select
+                name="CabinetID"
+                value={storageForm.CabinetID}
+                onChange={handleStorageChange}
+                style={styles.input}
+              >
+                <option value="">Select Cabinet</option>
+                {cabinets.map((cabinet) => (
+                  <option key={cabinet.CabinetID} value={cabinet.CabinetID}>
+                    {cabinet.CabinetName || cabinet.CabinetCode}
+                  </option>
+                ))}
+              </select>
+
+              <label>Cabinet Bay</label>
+              <select
+                name="CabinetBayID"
+                value={storageForm.CabinetBayID}
+                onChange={handleStorageChange}
+                style={styles.input}
+                disabled={!storageForm.CabinetID}
+              >
+                <option value="">Select Bay</option>
+                {cabinetBays.map((bay) => (
+                  <option key={bay.CabinetBayID} value={bay.CabinetBayID}>
+                    {bay.BayName || bay.BayCode}
+                  </option>
+                ))}
+              </select>
+
+              <label>Storage Box</label>
+              <select
+                name="StorageBoxID"
+                value={storageForm.StorageBoxID}
+                onChange={handleStorageChange}
+                style={styles.input}
+                disabled={!storageForm.CabinetBayID}
+              >
+                <option value="">Select Box</option>
+                {storageBoxes.map((box) => (
+                  <option key={box.StorageBoxID} value={box.StorageBoxID}>
+                    {box.BoxCode || box.BoxName}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleAssignStorage}
+                disabled={assigningStorage}
+                style={styles.submitButton}
+              >
+                {assigningStorage ? "Assigning..." : "Save Storage Assignment"}
+              </button>
+            </div>
+          )}
 
           {requestForms.length > 0 && (
             <div style={styles.card}>
