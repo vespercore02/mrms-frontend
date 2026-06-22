@@ -6,13 +6,25 @@ import AnnexBEditor from "../components/requestForms/AnnexBEditor";
 import GenericFormEditor from "../components/requestForms/GenericFormEditor";
 
 const defaultAnnexAData = {
+  date: "",
+  contactNumber: "",
   departmentOffice: "",
-  locationOfRecords: "",
-  recordsDescription: "",
-  inclusiveDates: "",
-  volumeInCubicMeter: "",
+  address: "",
   timeValue: "TEMPORARY",
-  remarks: "",
+
+  records: [
+    {
+      itemNo: "",
+      recordsSeriesTitleAndDescription: "",
+      periodCovered: "",
+      remarks: "",
+    },
+  ],
+
+  locationOfRecords: "",
+  volumeInCubicMeter: "",
+  preparedBy: "",
+  approvedBy: "",
 };
 
 const defaultAnnexBData = {
@@ -57,6 +69,24 @@ const RequestFormDetails = () => {
       setRequestForm(data);
 
       const formCode = data.RequestFormType?.FormCode;
+
+      if (formCode === "ANNEX_A") {
+        const autoFillData = buildAnnexAAutoFillData(data);
+
+        setFormData({
+          ...defaultAnnexAData,
+          ...autoFillData,
+          ...(data.FormData || {}),
+        });
+      } else if (formCode === "ANNEX_B") {
+        setFormData({
+          ...defaultAnnexBData,
+          ...(data.FormData || {}),
+        });
+      } else {
+        setFormData(data.FormData || {});
+      }
+      
       const defaultData = getDefaultFormData(formCode);
 
       setFormData({
@@ -111,6 +141,49 @@ const RequestFormDetails = () => {
     };
   }, [id]);
 
+  const getTodayDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  const buildAnnexAAutoFillData = (requestFormData) => {
+    const request = requestFormData?.Request;
+
+    return {
+      date: getTodayDate(),
+      contactNumber:
+        request?.Department?.DepartmentContact ||
+        request?.AgencyForm?.AgencyContact ||
+        "",
+
+      departmentOffice:
+        request?.Department?.DepartmentName ||
+        request?.AgencyForm?.AgencyName ||
+        "",
+
+      address:
+        request?.Department?.DepartmentAddress ||
+        request?.AgencyForm?.AgencyAddress ||
+        "",
+
+      timeValue: "TEMPORARY",
+
+      records: [
+        {
+          itemNo: "",
+          recordsSeriesTitleAndDescription: "",
+          periodCovered: "",
+          remarks: "",
+        },
+      ],
+
+      locationOfRecords: "",
+      volumeInCubicMeter: "",
+
+      preparedBy: request?.requester?.FullName || "",
+      approvedBy: "",
+    };
+  };
+
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,
@@ -141,7 +214,69 @@ const RequestFormDetails = () => {
     }
   };
 
+  const validateAnnexA = () => {
+    const errors = [];
+
+    if (!formData.date) errors.push("Date is required.");
+    if (!formData.contactNumber) errors.push("Contact number is required.");
+    if (!formData.departmentOffice)
+      errors.push("Department / Office is required.");
+    if (!formData.address) errors.push("Address is required.");
+    if (!formData.timeValue) errors.push("Time value is required.");
+    if (!formData.locationOfRecords)
+      errors.push("Location of records is required.");
+    if (!formData.volumeInCubicMeter)
+      errors.push("Volume in cubic meter is required.");
+    if (!formData.preparedBy) errors.push("Prepared by is required.");
+    if (!formData.approvedBy) errors.push("Approved by is required.");
+
+    const validRecords = (formData.records || []).filter((record) => {
+      return (
+        record.itemNo ||
+        record.recordsSeriesTitleAndDescription ||
+        record.periodCovered ||
+        record.remarks
+      );
+    });
+
+    if (validRecords.length === 0) {
+      errors.push("At least one records series row is required.");
+    }
+
+    validRecords.forEach((record, index) => {
+      if (!record.itemNo) {
+        errors.push(`Row ${index + 1}: GRDS/ARDS Item No. is required.`);
+      }
+
+      if (!record.recordsSeriesTitleAndDescription) {
+        errors.push(
+          `Row ${index + 1}: Records Series Title and Description is required.`,
+        );
+      }
+
+      if (!record.periodCovered) {
+        errors.push(`Row ${index + 1}: Period Covered is required.`);
+      }
+    });
+
+    return errors;
+  };
+
   const handleSubmitForm = async () => {
+    const confirmed = window.confirm("Submit this form?");
+
+    if (!confirmed) return;
+
+    const formCode = requestForm?.RequestFormType?.FormCode;
+
+    if (formCode === "ANNEX_A") {
+      const validationErrors = validateAnnexA();
+
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join(" "));
+        return;
+      }
+    }
     try {
       setSubmitting(true);
       setError("");
