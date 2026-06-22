@@ -87,7 +87,9 @@ const RequestDetails = () => {
 
     fetchRequest();
     fetchRequestForms();
-    fetchCabinets();
+    if (request?.Status === "RECEIVED_FOR_STORAGE") {
+      fetchCabinets();
+    }
   }, [id, refreshKey]);
 
   const handleSubmitRequest = async () => {
@@ -695,7 +697,6 @@ const RequestDetails = () => {
             </div>
           )}
 
-          
           {request.Status === "RECEIVED_FOR_STORAGE" && (
             <div style={styles.card}>
               <h2>Storage Assignment</h2>

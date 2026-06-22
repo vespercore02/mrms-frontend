@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getUser } from "../utils/auth";
 import axiosClient from "../api/axiosClient";
 import AnnexAEditor from "../components/requestForms/AnnexAEditor";
 import AnnexBEditor from "../components/requestForms/AnnexBEditor";
@@ -49,97 +50,19 @@ const RequestFormDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const user = getUser();
+  const [departments, setDepartments] = useState([]);
+  const [seriesList, setSeriesList] = useState([]);
   const [requestForm, setRequestForm] = useState(null);
   const [formData, setFormData] = useState(defaultAnnexAData);
 
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
-  const fetchRequestForm = async () => {
-    try {
-      setLoading(true);
-
-      const response = await axiosClient.get(`/request-forms/${id}`);
-      const data = response.data.data;
-
-      setRequestForm(data);
-
-      const formCode = data.RequestFormType?.FormCode;
-
-      if (formCode === "ANNEX_A") {
-        const autoFillData = buildAnnexAAutoFillData(data);
-
-        setFormData({
-          ...defaultAnnexAData,
-          ...autoFillData,
-          ...(data.FormData || {}),
-        });
-      } else if (formCode === "ANNEX_B") {
-        setFormData({
-          ...defaultAnnexBData,
-          ...(data.FormData || {}),
-        });
-      } else {
-        setFormData(data.FormData || {});
-      }
-      
-      const defaultData = getDefaultFormData(formCode);
-
-      setFormData({
-        ...defaultData,
-        ...(data.FormData || {}),
-      });
-
-      setError("");
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to load request form");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadRequestForm = async () => {
-      try {
-        setLoading(true);
-
-        const response = await axiosClient.get(`/request-forms/${id}`);
-        const data = response.data.data;
-
-        if (!isMounted) return;
-
-        setRequestForm(data);
-
-        if (data.FormData) {
-          setFormData({
-            ...defaultAnnexAData,
-            ...data.FormData,
-          });
-        }
-
-        setError("");
-      } catch (err) {
-        if (!isMounted) return;
-        setError(err.response?.data?.message || "Failed to load request form");
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadRequestForm();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [id]);
 
   const getTodayDate = () => {
     return new Date().toISOString().split("T")[0];
@@ -148,6 +71,14 @@ const RequestFormDetails = () => {
   const buildAnnexAAutoFillData = (requestFormData) => {
     const request = requestFormData?.Request;
 
+    const selectedDepartment = departments.find(
+      (department) =>
+        String(department.DepartmentID) ===
+        String(request?.DepartmentID || user?.DepartmentID),
+    );
+
+    console.log("USER:", user);
+    console.log("REQUEST:", request);
     return {
       date: getTodayDate(),
       contactNumber:
@@ -157,7 +88,7 @@ const RequestFormDetails = () => {
 
       departmentOffice:
         request?.Department?.DepartmentName ||
-        request?.AgencyForm?.AgencyName ||
+        selectedDepartment?.DepartmentName ||
         "",
 
       address:
@@ -183,6 +114,103 @@ const RequestFormDetails = () => {
       approvedBy: "",
     };
   };
+
+  const fetchRequestForm = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axiosClient.get(`/request-forms/${id}`);
+      const data = response.data.data;
+
+      setRequestForm(data);
+
+      const formCode = data.RequestFormType?.FormCode;
+
+      if (formCode === "ANNEX_A") {
+        const autoFillData = buildAnnexAAutoFillData(data);
+        const savedData = data.FormData || {};
+
+        setFormData({
+          ...defaultAnnexAData,
+          ...autoFillData,
+          ...savedData,
+
+          departmentOffice:
+            savedData.departmentOffice || autoFillData.departmentOffice,
+
+          records: savedData.records?.length
+            ? savedData.records
+            : defaultAnnexAData.records,
+        });
+      } else if (formCode === "ANNEX_B") {
+        setFormData({
+          ...defaultAnnexBData,
+          ...(data.FormData || {}),
+        });
+      } else {
+        setFormData(data.FormData || {});
+      }
+
+      setError("");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load request form");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    const fetchSeries = async () => {
+      try {
+        const response = await axiosClient.get("/series", {
+          params: {
+            page: 1,
+            limit: 100,
+          },
+        });
+
+        const result = response.data.data;
+        setSeriesList(result.data || result || []);
+      } catch {
+        setSeriesList([]);
+      }
+    };
+
+    fetchSeries();
+  }, []);
+
+  useEffect(() => {
+    if (loadingDepartments) return;
+
+    const loadRequestForm = async () => {
+      await fetchRequestForm();
+    };
+
+    loadRequestForm();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loadingDepartments]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axiosClient.get("/departments", {
+          params: {
+            page: 1,
+            limit: 100,
+          },
+        });
+
+        const result = response.data.data;
+        setDepartments(result.data || result || []);
+      } catch {
+        setDepartments([]);
+      } finally {
+        setLoadingDepartments(false);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -228,7 +256,6 @@ const RequestFormDetails = () => {
     if (!formData.volumeInCubicMeter)
       errors.push("Volume in cubic meter is required.");
     if (!formData.preparedBy) errors.push("Prepared by is required.");
-    if (!formData.approvedBy) errors.push("Approved by is required.");
 
     const validRecords = (formData.records || []).filter((record) => {
       return (
@@ -303,13 +330,6 @@ const RequestFormDetails = () => {
     return `/requests/${requestForm.RequestID}`;
   };
 
-  const getDefaultFormData = (formCode) => {
-    if (formCode === "ANNEX_A") return defaultAnnexAData;
-    if (formCode === "ANNEX_B") return defaultAnnexBData;
-
-    return {};
-  };
-
   if (loading) return <p>Loading request form...</p>;
 
   if (!requestForm) {
@@ -349,6 +369,9 @@ const RequestFormDetails = () => {
       {formCode === "ANNEX_A" ? (
         <AnnexAEditor
           formData={formData}
+          setFormData={setFormData}
+          seriesList={seriesList}
+          requestFormStatus={requestForm.Status}
           handleChange={handleChange}
           handleSaveDraft={handleSaveDraft}
           handleSubmitForm={handleSubmitForm}

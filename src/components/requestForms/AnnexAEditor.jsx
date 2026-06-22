@@ -10,13 +10,17 @@ const emptyRecordRow = {
 const AnnexAEditor = ({
   formData,
   setFormData,
+  seriesList = [],
+  requestFormStatus,
   handleChange,
   handleSaveDraft,
   handleSubmitForm,
   saving,
   submitting,
 }) => {
-  const records = formData.records?.length ? formData.records : [emptyRecordRow];
+  const records = formData.records || [];
+
+  const isSubmitted = requestFormStatus === "SUBMITTED";
 
   const handleRecordChange = (index, field, value) => {
     const updatedRecords = records.map((record, recordIndex) =>
@@ -24,6 +28,28 @@ const AnnexAEditor = ({
         ? {
             ...record,
             [field]: value,
+          }
+        : record,
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      records: updatedRecords,
+    }));
+  };
+
+  const handleSeriesSelect = (index, seriesId) => {
+    const selectedSeries = seriesList.find(
+      (series) => String(series.SeriesID) === String(seriesId),
+    );
+
+    const updatedRecords = records.map((record, recordIndex) =>
+      recordIndex === index
+        ? {
+            ...record,
+            seriesId,
+            itemNo: selectedSeries?.ItemNoID || "",
+            recordsSeriesTitleAndDescription: selectedSeries?.SeriesName || "",
           }
         : record,
     );
@@ -52,9 +78,7 @@ const AnnexAEditor = ({
 
   return (
     <div style={styles.page}>
-      <h2 style={styles.title}>
-        Request for Authority to Transfer Records
-      </h2>
+      <h2 style={styles.title}>Request for Authority to Transfer Records</h2>
 
       <form onSubmit={handleSaveDraft}>
         <div style={styles.formBox}>
@@ -64,46 +88,50 @@ const AnnexAEditor = ({
               <span>CENTRAL RECORDS OFFICE</span>
             </div>
 
-            <div>
+            <div style={styles.field}>
               <label>Date</label>
               <input
                 name="date"
                 type="date"
                 value={formData.date || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
             </div>
 
-            <div>
+            <div style={styles.field}>
               <label>Contact Number</label>
               <input
                 name="contactNumber"
                 value={formData.contactNumber || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
             </div>
           </div>
 
           <div style={styles.twoColumn}>
-            <div>
+            <div style={styles.field}>
               <label>Department / Office</label>
               <input
                 name="departmentOffice"
                 value={formData.departmentOffice || ""}
-                onChange={handleChange}
-                style={styles.input}
+                readOnly
+                style={{
+                  ...styles.fullInput,
+                  background: "#f3f4f6",
+                  cursor: "not-allowed",
+                }}
               />
             </div>
 
-            <div>
+            <div style={styles.field}>
               <label>Address</label>
               <input
                 name="address"
                 value={formData.address || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
             </div>
           </div>
@@ -156,32 +184,45 @@ const AnnexAEditor = ({
                     <td style={styles.td}>
                       <input
                         value={record.itemNo || ""}
-                        onChange={(e) =>
-                          handleRecordChange(index, "itemNo", e.target.value)
-                        }
-                        style={styles.tableInput}
+                        readOnly
+                        style={{
+                          ...styles.tableInput,
+                          background: "#f3f4f6",
+                        }}
                       />
                     </td>
 
                     <td style={styles.td}>
-                      <textarea
-                        value={
-                          record.recordsSeriesTitleAndDescription || ""
-                        }
-                        onChange={(e) =>
-                          handleRecordChange(
-                            index,
-                            "recordsSeriesTitleAndDescription",
-                            e.target.value,
-                          )
-                        }
-                        style={styles.tableTextarea}
-                      />
+                      {isSubmitted ? (
+                        <div style={styles.readOnlyCell}>
+                          {record.recordsSeriesTitleAndDescription || "-"}
+                        </div>
+                      ) : (
+                        <select
+                          value={record.seriesId || ""}
+                          onChange={(e) =>
+                            handleSeriesSelect(index, e.target.value)
+                          }
+                          style={styles.tableInput}
+                        >
+                          <option value="">Select records series</option>
+                          {seriesList.map((series) => (
+                            <option
+                              key={series.SeriesID}
+                              value={series.SeriesID}
+                            >
+                              {series.ItemNoID ? `${series.ItemNoID} - ` : ""}
+                              {series.SeriesName}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
 
                     <td style={styles.td}>
                       <input
                         value={record.periodCovered || ""}
+                        readOnly={isSubmitted}
                         onChange={(e) =>
                           handleRecordChange(
                             index,
@@ -189,7 +230,10 @@ const AnnexAEditor = ({
                             e.target.value,
                           )
                         }
-                        style={styles.tableInput}
+                        style={{
+                          ...styles.tableInput,
+                          background: isSubmitted ? "#f3f4f6" : "#fff",
+                        }}
                       />
                     </td>
 
@@ -204,14 +248,16 @@ const AnnexAEditor = ({
                     </td>
 
                     <td style={styles.td}>
-                      <button
-                        type="button"
-                        onClick={() => removeRecordRow(index)}
-                        style={styles.removeButton}
-                        disabled={records.length === 1}
-                      >
-                        Remove
-                      </button>
+                      {!isSubmitted && (
+                        <button
+                          type="button"
+                          onClick={() => removeRecordRow(index)}
+                          style={styles.removeButton}
+                          disabled={records.length === 1}
+                        >
+                          Remove
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -219,51 +265,57 @@ const AnnexAEditor = ({
             </table>
           </div>
 
-          <button type="button" onClick={addRecordRow} style={styles.addButton}>
-            + Add Record Row
-          </button>
+          {!isSubmitted && (
+            <button
+              type="button"
+              onClick={addRecordRow}
+              style={styles.addButton}
+            >
+              + Add Record Row
+            </button>
+          )}
 
           <div style={styles.twoColumn}>
-            <div>
+            <div style={styles.field}>
               <label>Location of Records</label>
               <input
                 name="locationOfRecords"
                 value={formData.locationOfRecords || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
             </div>
 
-            <div>
+            <div style={styles.field}>
               <label>Volume in Cubic Meter</label>
               <input
                 name="volumeInCubicMeter"
                 value={formData.volumeInCubicMeter || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
             </div>
           </div>
 
           <div style={styles.twoColumn}>
-            <div>
+            <div style={styles.field}>
               <label>Prepared By</label>
               <input
                 name="preparedBy"
                 value={formData.preparedBy || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
               <small>Records Custodian</small>
             </div>
 
-            <div>
+            <div style={styles.field}>
               <label>Approved By</label>
               <input
                 name="approvedBy"
                 value={formData.approvedBy || ""}
                 onChange={handleChange}
-                style={styles.input}
+                style={styles.fullInput}
               />
               <small>Department Head</small>
             </div>
@@ -332,6 +384,7 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
+    tableLayout: "fixed",
   },
   th: {
     border: "1px solid #111827",
@@ -344,19 +397,7 @@ const styles = {
     padding: "6px",
     verticalAlign: "top",
   },
-  tableInput: {
-    width: "100%",
-    padding: "8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-  },
-  tableTextarea: {
-    width: "100%",
-    minHeight: "60px",
-    padding: "8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-  },
+
   addButton: {
     padding: "8px 12px",
     border: "none",
@@ -373,6 +414,54 @@ const styles = {
     background: "#dc2626",
     color: "#fff",
     cursor: "pointer",
+  },
+
+  field: {
+    minWidth: 0,
+  },
+
+  fullInput: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "8px",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+  },
+
+  tableInput: {
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    padding: "6px",
+    border: "1px solid #d1d5db",
+    borderRadius: "4px",
+  },
+
+  tableTextarea: {
+    width: "100%",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    minHeight: "70px",
+    padding: "6px",
+    border: "1px solid #d1d5db",
+    borderRadius: "4px",
+    resize: "vertical",
+  },
+
+  readOnlyCell: {
+    minHeight: "34px",
+    padding: "8px",
+    background: "#f3f4f6",
+    borderRadius: "4px",
+  },
+
+  submittedNotice: {
+    marginTop: "16px",
+    padding: "12px",
+    borderRadius: "8px",
+    background: "#dcfce7",
+    color: "#166534",
+    fontWeight: "bold",
   },
 };
 
