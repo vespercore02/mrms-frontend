@@ -11,6 +11,7 @@ const AnnexAEditor = ({
   formData,
   setFormData,
   seriesList = [],
+  isLocked = false,
   requestFormStatus,
   handleChange,
   handleSaveDraft,
@@ -76,12 +77,22 @@ const AnnexAEditor = ({
     }));
   };
 
+  const formatDate = (value) => {
+    if (!value) return "";
+
+    return new Date(value).toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="print-page">
       <h2 style={styles.title}>Request for Authority to Transfer Records</h2>
 
       <form onSubmit={handleSaveDraft}>
-        <div style={styles.formBox}>
+        <div style={styles.formBox} className="print-form">
           <div style={styles.headerGrid}>
             <div style={styles.logoBox}>
               <strong>CITY GOVERNMENT OF MUNTINLUPA</strong>
@@ -91,21 +102,31 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Date</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="date"
                 type="date"
                 value={formData.date || ""}
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
             </div>
 
             <div style={styles.field}>
               <label>Contact Number</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="contactNumber"
                 value={formData.contactNumber || ""}
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
             </div>
           </div>
@@ -114,12 +135,14 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Department / Office</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="departmentOffice"
                 value={formData.departmentOffice || ""}
                 readOnly
                 style={{
                   ...styles.fullInput,
-                  background: "#f3f4f6",
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
                   cursor: "not-allowed",
                 }}
               />
@@ -128,10 +151,15 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Address</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="address"
                 value={formData.address || ""}
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
             </div>
           </div>
@@ -141,22 +169,34 @@ const AnnexAEditor = ({
 
             <label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 type="radio"
                 name="timeValue"
                 value="PERMANENT"
                 checked={formData.timeValue === "PERMANENT"}
                 onChange={handleChange}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
               Permanent
             </label>
 
             <label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 type="radio"
                 name="timeValue"
                 value="TEMPORARY"
                 checked={formData.timeValue === "TEMPORARY"}
                 onChange={handleChange}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
               Temporary
             </label>
@@ -165,7 +205,7 @@ const AnnexAEditor = ({
           <h3>Records Series</h3>
 
           <div style={styles.tableWrap}>
-            <table style={styles.table}>
+            <table style={styles.table} className="print-form">
               <thead>
                 <tr>
                   <th style={styles.th}>GRDS/ARDS Item No.</th>
@@ -174,7 +214,9 @@ const AnnexAEditor = ({
                   </th>
                   <th style={styles.th}>Period Covered</th>
                   <th style={styles.th}>Remarks</th>
-                  <th style={styles.th}>Action</th>
+                  <th style={styles.th} className="print-hide-column">
+                    Action
+                  </th>
                 </tr>
               </thead>
 
@@ -183,6 +225,8 @@ const AnnexAEditor = ({
                   <tr key={index}>
                     <td style={styles.td}>
                       <input
+                        className="print-input"
+                        readOnly={isLocked}
                         value={record.itemNo || ""}
                         readOnly
                         style={{
@@ -221,6 +265,8 @@ const AnnexAEditor = ({
 
                     <td style={styles.td}>
                       <input
+                        className="print-input"
+                        readOnly={isLocked}
                         value={record.periodCovered || ""}
                         readOnly={isSubmitted}
                         onChange={(e) =>
@@ -239,15 +285,21 @@ const AnnexAEditor = ({
 
                     <td style={styles.td}>
                       <input
+                        className="print-input"
+                        readOnly={isLocked}
+                        readOnly={isSubmitted}
                         value={record.remarks || ""}
                         onChange={(e) =>
                           handleRecordChange(index, "remarks", e.target.value)
                         }
-                        style={styles.tableInput}
+                        style={{
+                          ...styles.tableInput,
+                          background: isSubmitted ? "#f3f4f6" : "#fff",
+                        }}
                       />
                     </td>
 
-                    <td style={styles.td}>
+                    <td style={styles.td} className="print-hide-column">
                       {!isSubmitted && (
                         <button
                           type="button"
@@ -265,7 +317,7 @@ const AnnexAEditor = ({
             </table>
           </div>
 
-          {!isSubmitted && (
+          {!isLocked && (
             <button
               type="button"
               onClick={addRecordRow}
@@ -279,20 +331,30 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Location of Records</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="locationOfRecords"
                 value={formData.locationOfRecords || ""}
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
             </div>
 
             <div style={styles.field}>
               <label>Volume in Cubic Meter</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="volumeInCubicMeter"
                 value={formData.volumeInCubicMeter || ""}
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
               />
             </div>
           </div>
@@ -301,10 +363,28 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Prepared By</label>
               <input
+                className="print-input"
+                readOnly={isLocked}
                 name="preparedBy"
-                value={formData.preparedBy || ""}
+                value={
+                  formData.preparedBy ||
+                  (isLocked ? "Pending Department Head Approval" : "")
+                }
                 onChange={handleChange}
-                style={styles.fullInput}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
+              />
+
+              <label>Prepared Date</label>
+              <input
+                value={formatDate(formData.preparedDate)}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                }}
+                readOnly
               />
               <small>Records Custodian</small>
             </div>
@@ -312,21 +392,50 @@ const AnnexAEditor = ({
             <div style={styles.field}>
               <label>Approved By</label>
               <input
+                className="print-input"
                 name="approvedBy"
-                value={formData.approvedBy || ""}
-                onChange={handleChange}
-                style={styles.fullInput}
+                value={
+                  formData.approvedBy ||
+                  (isLocked ? "Pending Department Head Approval" : "")
+                }
+                readOnly
+                style={{
+                  ...styles.fullInput,
+                  background: "#f3f4f6",
+                }}
+              />
+              <label>Approved Date</label>
+              <input
+                value={formatDate(formData.approvedDate)}
+                style={{
+                  ...styles.tableInput,
+                  background: isSubmitted ? "#f3f4f6" : "#fff",
+                  textAlign:"center"
+                }}
+                readOnly
               />
               <small>Department Head</small>
             </div>
           </div>
         </div>
 
-        <EditorActions
-          saving={saving}
-          submitting={submitting}
-          handleSubmitForm={handleSubmitForm}
-        />
+        <div className="no-print" style={styles.printActions}>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={styles.printButton}
+          >
+            Print Annex A
+          </button>
+        </div>
+
+        {!isLocked && (
+          <EditorActions
+            saving={saving}
+            submitting={submitting}
+            handleSubmitForm={handleSubmitForm}
+          />
+        )}
       </form>
     </div>
   );
@@ -462,6 +571,21 @@ const styles = {
     background: "#dcfce7",
     color: "#166534",
     fontWeight: "bold",
+  },
+
+  printActions: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: "12px",
+  },
+
+  printButton: {
+    padding: "8px 12px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#111827",
+    color: "#fff",
+    cursor: "pointer",
   },
 };
 

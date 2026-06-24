@@ -25,7 +25,9 @@ const defaultAnnexAData = {
   locationOfRecords: "",
   volumeInCubicMeter: "",
   preparedBy: "",
+  preparedDate: "",
   approvedBy: "",
+  approvedDate: "",
 };
 
 const defaultAnnexBData = {
@@ -110,8 +112,88 @@ const RequestFormDetails = () => {
       locationOfRecords: "",
       volumeInCubicMeter: "",
 
-      preparedBy: request?.requester?.FullName || "",
-      approvedBy: "",
+      preparedBy:
+        requestFormData?.PreparedUser?.FullName ||
+        request?.requester?.FullName ||
+        user?.FullName ||
+        "",
+
+      preparedDate: ["SUBMITTED", "APPROVED"].includes(requestFormData?.Status)
+        ? requestFormData?.updatedAt
+        : "",
+
+      approvedBy: requestFormData?.ApprovedUser?.FullName || "",
+
+      approvedDate:
+        requestFormData?.Status === "APPROVED"
+          ? requestFormData?.updatedAt
+          : "",
+    };
+  };
+
+  const defaultAnnexBData = {
+    croAuthorityNumber: "",
+
+    departmentOffice: "",
+
+    recordsOfficer: "",
+
+    departmentHead: "",
+
+    accessRestriction: "NO_RESTRICTION",
+
+    authorizedPersonnel: [
+      {
+        name: "",
+        position: "",
+      },
+      {
+        name: "",
+        position: "",
+      },
+    ],
+
+    records: [],
+
+    accessionNumber: "",
+    receivedBy: "",
+    receivedPosition: "",
+    dateReceived: "",
+  };
+
+  const buildAnnexBAutoFillData = (requestFormData, annexAForm) => {
+    const request = requestFormData?.Request;
+    const annexAData = annexAForm?.FormData || {};
+    const annexARecords = annexAData.records || [];
+
+    return {
+      croAuthorityNumber: "",
+
+      departmentOffice: request?.Department?.DepartmentName || "",
+
+      recordsOfficer: request?.requester?.FullName || "",
+
+      departmentHead: annexAForm?.ApprovedUser?.FullName || "",
+
+      accessRestriction: "NO_RESTRICTION",
+
+      authorizedPersonnel: [
+        { name: "", position: "" },
+        { name: "", position: "" },
+      ],
+
+      records: annexARecords.map((record) => ({
+        boxNumber: request?.StorageBox?.BoxCode || "Pending storage assignment",
+        recordsSeries: record.recordsSeriesTitleAndDescription || "",
+        inclusiveDates: record.periodCovered || "",
+        volume: annexAData.volumeInCubicMeter || "",
+        disposalAuthority: record.itemNo || "",
+      })),
+
+      accessionNumber: "To be assigned by CRO",
+      receivedBy: "Pending CRO receiving",
+      receivedPosition: "Pending",
+      dateReceived: "Pending",
     };
   };
 
@@ -121,6 +203,10 @@ const RequestFormDetails = () => {
 
       const response = await axiosClient.get(`/request-forms/${id}`);
       const data = response.data.data;
+
+      console.log("REQUEST FORM:", data);
+      console.log("REQUEST:", data.Request);
+      console.log("REQUEST FORMS:", data.Request?.RequestForms);
 
       setRequestForm(data);
 
@@ -138,14 +224,27 @@ const RequestFormDetails = () => {
           departmentOffice:
             savedData.departmentOffice || autoFillData.departmentOffice,
 
+          preparedBy: autoFillData.preparedBy || savedData.preparedBy,
+          preparedDate: autoFillData.preparedDate || savedData.preparedDate,
+
+          approvedBy: autoFillData.approvedBy || savedData.approvedBy,
+
+          approvedDate: autoFillData.approvedDate || savedData.approvedDate,
+
           records: savedData.records?.length
             ? savedData.records
             : defaultAnnexAData.records,
         });
       } else if (formCode === "ANNEX_B") {
+        const annexA = data?.Request?.RequestForms?.find(
+          (item) => item.RequestFormType?.FormCode === "ANNEX_A",
+        );
+
+        const autoFillData = buildAnnexBAutoFillData(data, annexA);
+
         setFormData({
           ...defaultAnnexBData,
-          ...(data.FormData || {}),
+          ...autoFillData,
         });
       } else {
         setFormData(data.FormData || {});
@@ -345,6 +444,16 @@ const RequestFormDetails = () => {
 
   const formCode = requestForm.RequestFormType?.FormCode;
 
+  const requestStatus = requestForm?.Request?.Status;
+  const formStatus = requestForm?.Status;
+
+  const editableRequestStatuses = ["DRAFT", "FOR_COMPLIANCE", "REJECTED"];
+  const editableFormStatuses = ["DRAFT"];
+
+  const isLocked =
+    !editableRequestStatuses.includes(requestStatus) ||
+    !editableFormStatuses.includes(formStatus);
+
   return (
     <div>
       <button onClick={() => navigate(getBackPath())} style={styles.backBtn}>
@@ -356,7 +465,7 @@ const RequestFormDetails = () => {
       {error && <div style={styles.error}>{error}</div>}
       {success && <div style={styles.success}>{success}</div>}
 
-      <div style={styles.summaryGrid}>
+      <div style={styles.summaryGrid} className="no-print">
         <SummaryCard title="Form Code" value={formCode} />
         <SummaryCard
           title="Category"
@@ -377,6 +486,7 @@ const RequestFormDetails = () => {
           handleSubmitForm={handleSubmitForm}
           saving={saving}
           submitting={submitting}
+          isLocked={isLocked}
         />
       ) : formCode === "ANNEX_B" ? (
         <AnnexBEditor
@@ -386,6 +496,7 @@ const RequestFormDetails = () => {
           handleSubmitForm={handleSubmitForm}
           saving={saving}
           submitting={submitting}
+          isLocked={isLocked}
         />
       ) : (
         <GenericFormEditor requestForm={requestForm} />

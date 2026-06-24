@@ -1,0 +1,92 @@
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-form {
+    border: 1px solid #000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 8px !important;
+  }
+
+  .print-input {
+    border: none !important;
+    background: transparent !important;
+    padding: 2px !important;
+    box-shadow: none !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    border: 1px solid #000 !important;
+    padding: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .print-hide-column {
+    display: none !important;
+  }
+
+  @page {
+    size: legal portrait;
+    margin: 8mm;
+  }
+}
+
+@media print {
+  header,
+  nav,
+  aside,
+  .sidebar,
+  .topbar,
+  .app-header,
+  .layout-sidebar,
+  .layout-header {
+    display: none !important;
+  }
+}
+
+
+@media print {
+  h1 {
+    display: none !important;
+  }
+
+  h2 {
+    font-size: 16px !important;
+    margin: 4px 0 8px !important;
+  }
+
+  .print-form {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media print {
+  .print-form {
+    font-size: 11px !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    font-size: 10px !important;
+  }
+}

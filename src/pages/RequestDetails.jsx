@@ -252,7 +252,13 @@ const RequestDetails = () => {
 
     const isDepartmentCustodian = roleName === "Department Custodian";
 
-    if (request.Status === "DRAFT" && isDepartmentCustodian) {
+    const isRequester = Number(request.RequestedBy) === Number(user?.UserID);
+
+    if (
+      request.Status === "DRAFT" &&
+      isRequester &&
+      ["Department Custodian", "Department Head"].includes(roleName)
+    ) {
       return [
         {
           label: "Submit Request",
@@ -540,6 +546,8 @@ const RequestDetails = () => {
       setAssigningStorage(false);
     }
   };
+
+ 
 
   return (
     <div style={styles.page}>
