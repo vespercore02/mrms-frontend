@@ -122,6 +122,7 @@ const RequestDetails = () => {
     if (label === "Approved") return styles.approvedBadge;
     if (label === "Reviewed") return styles.reviewedBadge;
     if (label === "Completed") return styles.completedBadge;
+    if (label === "Generated") return styles.generatedBadge;
     if (label === "Draft Saved") return styles.draftBadge;
 
     return styles.notStartedBadge;
@@ -133,13 +134,16 @@ const RequestDetails = () => {
     if (form.Status === "APPROVED") return "Approved";
     if (form.Status === "REVIEWED") return "Reviewed";
     if (form.Status === "SUBMITTED") return "Completed";
+    if (form.Status === "GENERATED") return "Generated";
     if (hasData) return "Draft Saved";
 
     return "Not Started";
   };
 
   const isFormCompleted = (form) => {
-    return ["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status);
+    return ["GENERATED", "SUBMITTED", "REVIEWED", "APPROVED"].includes(
+      form.Status,
+    );
   };
 
   const getRequiredForms = () => {
@@ -191,9 +195,11 @@ const RequestDetails = () => {
   };
 
   const getFormChecklistStatus = (form) => {
-    if (["SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status)) {
+    if (
+      ["GENERATED", "SUBMITTED", "REVIEWED", "APPROVED"].includes(form.Status)
+    ) {
       return {
-        label: "Completed",
+        label: form.Status === "GENERATED" ? "Generated" : "Completed",
         symbol: "✓",
         style: styles.completedChecklist,
       };
@@ -546,8 +552,6 @@ const RequestDetails = () => {
       setAssigningStorage(false);
     }
   };
-
- 
 
   return (
     <div style={styles.page}>
@@ -1418,6 +1422,10 @@ const styles = {
     alignItems: "flex-start",
     gap: "8px",
     marginBottom: "12px",
+  },
+  generatedBadge: {
+    background: "#ccfbf1",
+    color: "#0f766e",
   },
 };
 
