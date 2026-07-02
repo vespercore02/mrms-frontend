@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../api/axiosClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getRequestStatusStyle,
   formatRequestStatus,
 } from "../utils/statusColors";
+import { getRoleProfile } from "../config/roleProfile";
+import { getUser } from "../utils/auth";
+import Button from "../components/common/Button";
 
 const Requests = () => {
+  const user = getUser();
+  const roleProfile = getRoleProfile(user?.Role?.RoleName);
+
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [requests, setRequests] = useState([]);
   const [meta, setMeta] = useState(null);
 
@@ -19,7 +27,8 @@ const Requests = () => {
 
   const [search, setSearch] = useState("");
   const [submittedSearch, setSubmittedSearch] = useState("");
-  const [status, setStatus] = useState("");
+
+  const status = searchParams.get("status") || "";
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -31,7 +40,7 @@ const Requests = () => {
             page,
             limit,
             search: submittedSearch,
-            status,
+            status: status,
           },
         });
 
@@ -60,14 +69,13 @@ const Requests = () => {
   return (
     <div>
       <div style={styles.header}>
-        <h1 style={styles.title}>Requests</h1>
+        <h1 style={styles.title}>
+          {roleProfile.requestPage?.title || "Requests"}
+        </h1>
 
-        <button
-          onClick={() => navigate("/requests/create")}
-          style={styles.button}
-        >
+        <Button onClick={() => navigate("/requests/create")}>
           + Create Request
-        </button>
+        </Button>
       </div>
 
       <form onSubmit={handleSearch} style={styles.filters}>
@@ -80,7 +88,17 @@ const Requests = () => {
 
         <select
           value={status}
-          onChange={(e) => setStatus(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setPage(1);
+            if (value) {
+              setSearchParams({
+                status: value,
+              });
+            } else {
+              setSearchParams({});
+            }
+          }}
           style={styles.input}
         >
           <option value="">All Status</option>
@@ -95,9 +113,7 @@ const Requests = () => {
           <option value="REJECTED">Rejected</option>
         </select>
 
-        <button type="submit" style={styles.button}>
-          Search
-        </button>
+        <Button type="submit">Search</Button>
       </form>
 
       {error && <div style={styles.error}>{error}</div>}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { saveAuth } from '../utils/auth';
+import Button from "../components/common/Button";
+
 
 const Login = () => {
   const navigate = useNavigate();
@@ -70,9 +72,9 @@ const Login = () => {
           placeholder="admin123"
         />
 
-        <button type="submit" disabled={loading} style={styles.button}>
+        <Button type="submit" disabled={loading} style={styles.button}>
           {loading ? 'Logging in...' : 'Login'}
-        </button>
+        </Button>
       </form>
     </div>
   );

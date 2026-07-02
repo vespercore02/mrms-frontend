@@ -8,7 +8,6 @@ export const sidebarLinks = [
       "Records Officer",
       "Department Head",
       "Department Custodian",
-      "Viewer",
     ],
   },
   {
@@ -20,7 +19,6 @@ export const sidebarLinks = [
       "Records Officer",
       "Department Head",
       "Department Custodian",
-      "Viewer",
     ],
   },
 

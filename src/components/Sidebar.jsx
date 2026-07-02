@@ -1,13 +1,14 @@
 import { NavLink } from "react-router-dom";
 import { getUser } from "../utils/auth";
 import { sidebarLinks } from "../config/sidebarLinks";
+import { THEME } from "../config/theme";
 
 const Sidebar = () => {
   const user = getUser();
   const roleName = user?.Role?.RoleName;
 
   const visibleLinks = sidebarLinks.filter((link) =>
-    link.roles.includes(roleName)
+    link.roles.includes(roleName),
   );
 
   return (
@@ -21,7 +22,7 @@ const Sidebar = () => {
             to={link.path}
             style={({ isActive }) => ({
               ...styles.link,
-              background: isActive ? "#2563eb" : "transparent",
+              background: isActive ? THEME.colors.primary : "transparent",
               color: isActive ? "#fff" : "#d1d5db",
             })}
           >
@@ -35,24 +36,25 @@ const Sidebar = () => {
 
 const styles = {
   sidebar: {
-    width: '240px',
-    minHeight: '100vh',
-    background: '#111827',
-    color: '#fff',
-    padding: '20px',
+    width: "240px",
+    minHeight: "100vh",
+    background: THEME.colors.primary,
+    color: "#fff",
+    padding: "20px",
   },
   logo: {
-    margin: '0 0 24px',
+    margin: "0 0 24px",
+    color: THEME.colors.warning,
   },
   nav: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
   },
   link: {
-    padding: '12px',
-    borderRadius: '8px',
-    textDecoration: 'none',
+    padding: "12px",
+    borderRadius: "8px",
+    textDecoration: "none",
   },
 };
 
