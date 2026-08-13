@@ -54,7 +54,7 @@ const RequestFormDetails = () => {
 
   const user = getUser();
   const [departments, setDepartments] = useState([]);
-  const [seriesList, setSeriesList] = useState([]);
+  //const [seriesList, setSeriesList] = useState([]);
   const [requestForm, setRequestForm] = useState(null);
   const [formData, setFormData] = useState(defaultAnnexAData);
 
@@ -257,6 +257,7 @@ const RequestFormDetails = () => {
       setLoading(false);
     }
   };
+  /*
   useEffect(() => {
     const fetchSeries = async () => {
       try {
@@ -276,6 +277,7 @@ const RequestFormDetails = () => {
 
     fetchSeries();
   }, []);
+  */
 
   useEffect(() => {
     if (loadingDepartments) return;
@@ -479,7 +481,7 @@ const RequestFormDetails = () => {
         <AnnexAEditor
           formData={formData}
           setFormData={setFormData}
-          seriesList={seriesList}
+          //seriesList={seriesList}
           requestFormStatus={requestForm.Status}
           handleChange={handleChange}
           handleSaveDraft={handleSaveDraft}

@@ -4,8 +4,7 @@ import Login from '../pages/Login';
 import Dashboard from '../pages/Dashboard';
 import Requests from '../pages/Requests';
 import Departments from '../pages/Departments';
-import Series from '../pages/Series';
-import Specifics from '../pages/Specifics';
+import RDS from '../pages/RDS';
 import Users from '../pages/Users';
 import AuditLogs from '../pages/AuditLogs';
 import AgencyForms from '../pages/AgencyForms';
@@ -42,8 +41,7 @@ const AppRoutes = () => {
 
         <Route path="/dashboard" element={withLayout(<Dashboard />)} />
         <Route path="/departments" element={withLayout(<Departments />)} />
-        <Route path="/series" element={withLayout(<Series />)} />
-        <Route path="/specifics" element={withLayout(<Specifics />)} />
+        <Route path="/rds" element={withLayout(<RDS />)} />
         <Route path="/users" element={withLayout(<Users />)} />
         <Route path="/audit-logs" element={withLayout(<AuditLogs />)} />
 

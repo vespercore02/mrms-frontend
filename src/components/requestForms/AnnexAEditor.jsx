@@ -1,8 +1,13 @@
 import EditorActions from "./EditorActions";
+import RdsLookup from "./RdsLookup";
 
 const emptyRecordRow = {
+  recordsSeriesOption: "",
+  seriesId: null,
+  specificId: null,
   itemNo: "",
   recordsSeriesTitleAndDescription: "",
+  retentionPeriod: "",
   periodCovered: "",
   remarks: "",
 };
@@ -10,7 +15,7 @@ const emptyRecordRow = {
 const AnnexAEditor = ({
   formData,
   setFormData,
-  seriesList = [],
+  //seriesList = [],
   isLocked = false,
   requestFormStatus,
   handleChange,
@@ -20,6 +25,8 @@ const AnnexAEditor = ({
   submitting,
 }) => {
   const records = formData.records || [];
+
+  //const recordsSeriesOptions = buildRecordsSeriesOptions(seriesList);
 
   const isSubmitted = requestFormStatus === "SUBMITTED";
 
@@ -38,29 +45,39 @@ const AnnexAEditor = ({
       records: updatedRecords,
     }));
   };
+  
 
-  const handleSeriesSelect = (index, seriesId) => {
-    const selectedSeries = seriesList.find(
-      (series) => String(series.SeriesID) === String(seriesId),
-    );
+  const handleRdsSelect = (index, selectedItem) => {
+    const titleAndDescription = selectedItem.specificName
+      ? `${selectedItem.seriesName} - ${selectedItem.specificName}`
+      : selectedItem.seriesName;
 
-    const updatedRecords = records.map((record, recordIndex) =>
-      recordIndex === index
-        ? {
-            ...record,
-            seriesId,
-            itemNo: selectedSeries?.ItemNoID || "",
-            recordsSeriesTitleAndDescription: selectedSeries?.SeriesName || "",
-          }
-        : record,
-    );
+    const updatedRecords = records.map((record, recordIndex) => {
+      if (recordIndex !== index) {
+        return record;
+      }
+
+      return {
+        ...record,
+
+        recordsSeriesOption: selectedItem.key,
+
+        seriesId: selectedItem.seriesId,
+        specificId: selectedItem.specificId,
+
+        itemNo: selectedItem.itemNo || "",
+
+        recordsSeriesTitleAndDescription: titleAndDescription || "",
+
+        retentionPeriod: selectedItem.retentionPeriod || "",
+      };
+    });
 
     setFormData((prev) => ({
       ...prev,
       records: updatedRecords,
     }));
   };
-
   const addRecordRow = () => {
     setFormData((prev) => ({
       ...prev,
@@ -237,30 +254,13 @@ const AnnexAEditor = ({
                     </td>
 
                     <td style={styles.td}>
-                      {isSubmitted ? (
-                        <div style={styles.readOnlyCell}>
-                          {record.recordsSeriesTitleAndDescription || "-"}
-                        </div>
-                      ) : (
-                        <select
-                          value={record.seriesId || ""}
-                          onChange={(e) =>
-                            handleSeriesSelect(index, e.target.value)
-                          }
-                          style={styles.tableInput}
-                        >
-                          <option value="">Select records series</option>
-                          {seriesList.map((series) => (
-                            <option
-                              key={series.SeriesID}
-                              value={series.SeriesID}
-                            >
-                              {series.ItemNoID ? `${series.ItemNoID} - ` : ""}
-                              {series.SeriesName}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                      <RdsLookup
+                        value={record.recordsSeriesTitleAndDescription || ""}
+                        disabled={isLocked}
+                        onSelect={(selectedItem) =>
+                          handleRdsSelect(index, selectedItem)
+                        }
+                      />
                     </td>
 
                     <td style={styles.td}>
@@ -410,7 +410,7 @@ const AnnexAEditor = ({
                 style={{
                   ...styles.tableInput,
                   background: isSubmitted ? "#f3f4f6" : "#fff",
-                  textAlign:"center"
+                  textAlign: "center",
                 }}
                 readOnly
               />

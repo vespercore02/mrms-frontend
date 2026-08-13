@@ -33,6 +33,11 @@ export const sidebarLinks = [
     label: "Specifics",
     roles: ["Admin", "Records Head", "Records Officer"],
   },
+  {
+    path: "/rds",
+    label: "RDS",
+    roles: ["Admin", "Records Head", "Records Officer"],
+  },
 
   // Admin setup pages
   {
